@@ -45,6 +45,12 @@ def transform(img, rect):
   M = cv2.getPerspectiveTransform(rect, dst)
   return cv2.warpPerspective(img, M, (w, h))
 
+def contained(p, s):
+  for pc, sc in zip(p, s):
+    if pc < 0 or pc >= sc:
+      return False
+  return True
+
 def remove_background(img, p=(40, 40)):
   q = deque()
   q.append(p)
@@ -55,17 +61,16 @@ def remove_background(img, p=(40, 40)):
     visited.add(p)
     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
       n = (x+dx, y+dy)
-      try:
-        if np.linalg.norm(img[n].astype(np.int8) - img[p].astype(np.int8)) < 5:
-          q.append(n)
-      except IndexError:
-        pass
+      if not contained(n, img.shape): continue
+      if np.linalg.norm(img[n].astype(np.int8) - img[p].astype(np.int8)) < 5:
+        q.append(n)
   for p in visited:
     img[p] = (0, 0, 0)
   return img
 
 img = cv2.imread('image.jpg')
-img = cv2.medianBlur(img, 7)
+img = imutils.resize(img, width=800)
+# img = cv2.medianBlur(img, 7)
 # show('original', img)
 
 corners, ids, _ = get_aruco(img)
@@ -74,8 +79,11 @@ corners, ids, _ = get_aruco(img)
 rect = rect_from_aruco_corners(corners)
 # cv2.polylines(copy, [rect.astype(int)], True, (0, 255, 0), 5)
 # show('markers', copy)
-
 img = transform(img, rect)
-# show('transform', img)
 img = remove_background(img, (200, 200))
-cv2.imwrite('bg.png', img)
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+th, bw = cv2.threshold(img_gray, 1, 255, cv2.THRESH_OTSU)
+img_blur = cv2.GaussianBlur(bw, (21, 21), 0)
+edges = cv2.Canny(image=img_blur, threshold1=100, threshold2=200) # Canny Edge Detection
+cv2.imwrite('edges.png', edges)
+
