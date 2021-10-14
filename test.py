@@ -68,22 +68,39 @@ def remove_background(img, p=(40, 40)):
     img[p] = (0, 0, 0)
   return img
 
-img = cv2.imread('image.jpg')
-img = imutils.resize(img, width=800)
+img = cv2.imread('20211014_132106.jpg')
+# img = imutils.resize(img, width=800) #sdf
 # img = cv2.medianBlur(img, 7)
 # show('original', img)
 
-corners, ids, _ = get_aruco(img)
+corners, ids, _ = get_aruco(img) # fsdsadfasfsd
 # copy = np.copy(img)
 # cv2.aruco.drawDetectedMarkers(copy, corners, ids)
-rect = rect_from_aruco_corners(corners)
+rect = rect_from_aruco_corners(corners) #  dsfsfdsf
 # cv2.polylines(copy, [rect.astype(int)], True, (0, 255, 0), 5)
 # show('markers', copy)
-img = transform(img, rect)
-img = remove_background(img, (200, 200))
+img = transform(img, rect) # dasfsdfs
+# img = remove_background(img, (200, 200))
 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-th, bw = cv2.threshold(img_gray, 1, 255, cv2.THRESH_OTSU)
-img_blur = cv2.GaussianBlur(bw, (21, 21), 0)
-edges = cv2.Canny(image=img_blur, threshold1=100, threshold2=200) # Canny Edge Detection
-cv2.imwrite('edges.png', edges)
+th, bw = cv2.threshold(img_gray, 100, 255, cv2.THRESH_OTSU)
+# img_blur = cv2.GaussianBlur(bw, (21, 21), 0)
+# edges = cv2.Canny(image=img_blur, threshold1=100, threshold2=200) # Canny Edge Detection
+
+# detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
+contours, hierarchy = cv2.findContours(image=bw, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+# draw contours on the original image
+image_copy = img.copy()
+print(type(contours))
+contours = list(filter(lambda c: cv2.contourArea(c) > 20000, contours))
+# for c in contours:
+#   print(cv2.contourArea(c))
+cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2,
+                 lineType=cv2.LINE_AA)
+# see the results
+cv2.imshow('None approximation', image_copy)
+cv2.waitKey(0)
+cv2.imwrite('contours_none_image1.jpg', image_copy)
+cv2.destroyAllWindows()
+
+cv2.imwrite('edges.png', bw)
 
