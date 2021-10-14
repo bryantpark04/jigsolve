@@ -97,10 +97,7 @@ contours = list(filter(lambda c: cv2.contourArea(c) > 20000, contours))
 cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2,
                  lineType=cv2.LINE_AA)
 # see the results
-cv2.imshow('None approximation', image_copy)
-cv2.waitKey(0)
-cv2.imwrite('contours_none_image1.jpg', image_copy)
-cv2.destroyAllWindows()
+cv2.imwrite('contours_simple_image1.jpg', image_copy)
 
-cv2.imwrite('edges.png', bw)
+# cv2.imwrite('edges.png', bw)
 
