@@ -53,6 +53,27 @@ def find_contours(img):
   
   return contours, img_transform
 
+def get_bounding_boxes(image, contours):
+    '''
+    Get the bounding boxes for pieces in an image.
+
+    Paramters
+    ---------
+    image : opencv Mat
+    contours : opencv list of contours
+
+    Returns
+    -------
+    bounding_boxes
+        NumPy array, ...
+    '''
+    pass
+
+def get_image_segments(bounding_boxes):
+    '''
+    Get the 
+    '''
+
 
 # read image from file - change later
 img = cv2.imread('../test_images/IMG_1087_edited.jpg')
