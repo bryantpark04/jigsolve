@@ -57,23 +57,37 @@ def get_bounding_boxes(image, contours):
     '''
     Get the bounding boxes for pieces in an image.
 
-    Paramters
+    Parameters
     ---------
     image : opencv Mat
     contours : opencv list of contours
 
     Returns
     -------
-    bounding_boxes
-        NumPy array, ...
+    bounding_boxes : List
+        List of tuples (x, y, w, h) where w is width and h is height.
     '''
-    pass
+    bounding_boxes = [cv2.boundingRect(ctr) for i, ctr in enumerate(contours)]
+    # x, y, w, h
+    return bounding_boxes
 
-def get_image_segments(bounding_boxes):
+def get_image_segments(image, bounding_boxes):
     '''
-    Get the 
-    '''
+    Get image segments, each segments containing a puzzle piece.
 
+    Parameters
+    ----------
+    image : opencv Mat
+    bounding_boxes : List
+
+    Returns
+    -------
+    image_segments : ndarray
+        Array of Mat image segments
+
+    '''
+    image_segments = np.array([image[y:y+h, x:x+w] for x, y, w, h in bounding_boxes])
+    return image_segments
 
 # read image from file - change later
 img = cv2.imread('../test_images/IMG_1087_edited.jpg')
