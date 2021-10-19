@@ -8,5 +8,6 @@ def main():
 
     img = cv2.imread(args.path)
     cv2.imshow('test', img)
+    cv2.waitKey(0)
 
 if __name__ == '__main__': main()
