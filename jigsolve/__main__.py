@@ -3,8 +3,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from jigsolve.vision.image import binarize, find_contours, get_aruco, get_mask, get_pieces, orientation, perspective_transform, rect_from_corners, rotate_piece
-from jigsolve.utils import crop
+from jigsolve.vision.image import binarize, find_contours, get_aruco, get_mask, get_pieces, orientation, perspective_transform, rect_from_corners
+from jigsolve.utils import crop, rotate
 
 def main():
     test_image = Path(__file__) / '../../test_images/good.jpg'
@@ -27,7 +27,7 @@ def main():
         piece = crop(img, box)
         piece_bw = crop(mask, box)
         angle = orientation(piece_bw)
-        piece = rotate_piece(piece, -angle)
+        piece = rotate(piece, -angle)
         cv2.imshow('piece', piece)
         cv2.waitKey(0)
 

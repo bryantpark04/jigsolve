@@ -215,30 +215,3 @@ def orientation(binarized):
     split = np.argmax(np.diff(thetas)) + 1
     theta = np.mean(thetas[:split])
     return 90 - theta * 180 / np.pi
-
-def rotate_piece(img, angle):
-    '''Rotates a piece.
-
-    This function takes an image of a piece and rotates it counterclockwise.
-
-    Parameters
-    ----------
-    img : np.ndarray
-        The image to rotate.
-    angle : float
-        The angle, in degrees, to rotate counterclockwise.
-
-    Returns
-    -------
-    rotated : np.ndarray
-        The image, rotated.
-    '''
-    h, w = img.shape[:2]
-    M = cv2.getRotationMatrix2D((h / 2, w / 2), angle, 1)
-    abs_cos = abs(M[0,0])
-    abs_sin = abs(M[0,1])
-    new_h = int(h * abs_sin + w * abs_cos)
-    new_w = int(h * abs_cos + w * abs_sin)
-    M[0,2] += new_w / 2 - w / 2
-    M[1,2] += new_h / 2 - h / 2
-    return cv2.warpAffine(img, M, (new_h, new_w))
