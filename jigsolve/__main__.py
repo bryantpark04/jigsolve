@@ -2,9 +2,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from imutils import rotate_bound
 
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
-from jigsolve.utils import crop, rotate
 from jigsolve.vision.piece import edge_types
 
 def main():
@@ -36,11 +36,13 @@ def main():
 
     # pieces = list(get_pieces(img, contours))
     # box, piece, mask = pieces[9]
-    for box, piece, mask in get_pieces(img, contours):
-        angle = orientation(mask)
-        piece = rotate(piece, -angle)
-        mask = rotate(mask, -angle)
+    for box, piece, mask in get_pieces(img, contours, padding=20):
+        angle = orientation(mask, num_bins=16)
+        if angle > 45: angle -= 90
+        piece = rotate_bound(piece, angle)
+        mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
+        print(edges)
         cv2.imwrite('piece.png', piece)
         cv2.imshow('piece', piece)
         cv2.waitKey(0)

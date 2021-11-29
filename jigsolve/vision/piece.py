@@ -8,7 +8,7 @@ EDGE_INDENT = -1
 EDGE_TAB = 1
 EDGE_FLAT = 0
 
-def edge_types(piece, indent=40, tab=2, tab_length=20, tab_width=30):
+def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=30):
     '''Determine edge types of a piece.
 
     This function takes a contour of an oriented piece and determines the edge
@@ -26,13 +26,18 @@ def edge_types(piece, indent=40, tab=2, tab_length=20, tab_width=30):
     edges : list
         A list of edges, clockwise starting from the top edge.
     '''
-    piece = cv2.medianBlur(piece, 7)
+    # show = np.zeros_like(piece)
+    # show = cv2.cvtColor(show, cv2.COLOR_GRAY2BGR)
+
+    piece = cv2.medianBlur(piece, 9)
     contours = cv2.findContours(image=piece, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)[0]
     contour = max(contours, key=cv2.contourArea)
+    # cv2.drawContours(show, [contour], 0, (255, 255, 255), 1, cv2.LINE_AA)
 
     M = cv2.moments(contour)
     cx = int(M['m10'] / M['m00'])
     cy = int(M['m01'] / M['m00'])
+    # cv2.circle(show, (cx, cy), 10, (0, 0, 255), cv2.FILLED)
 
     hull = cv2.convexHull(contour, returnPoints=False)
     defects = cv2.convexityDefects(contour, hull)
@@ -41,36 +46,47 @@ def edge_types(piece, indent=40, tab=2, tab_length=20, tab_width=30):
         start = contour[s][0]
         end = contour[e][0]
         far = contour[f][0]
-        dx = np.abs(far[0] - cx)
-        dy = np.abs(far[1] - cy)
+        dx = np.abs(start[0] - end[0])
+        dy = np.abs(start[1] - end[1])
+        ox = np.abs(far[0] - cx)
+        oy = np.abs(far[1] - cy)
+        # cv2.line(show, start, end, (0, 0, 255), 1, cv2.LINE_AA)
+        # cv2.circle(show, far, 5, (0, 255, 255), cv2.FILLED)
         if d > 256 * indent:
-            if edges[0] is None and far[1] < cy and dx < dy:
-                edges[0] = EDGE_INDENT
-            elif edges[1] is None and far[0] > cx and dx > dy:
-                edges[1] = EDGE_INDENT
-            elif edges[2] is None and far[1] > cy and dx < dy:
-                edges[2] = EDGE_INDENT
-            elif edges[3] is None and far[0] < cx and dx > dy:
-                edges[3] = EDGE_INDENT
+            if edges[0] is None and far[1] < cy and ox < oy and dx > dy and dy < indent_max:
+                edges[0] = (EDGE_INDENT, far)
+            elif edges[1] is None and far[0] > cx and ox > oy and dx < dy and dx < indent_max:
+                edges[1] = (EDGE_INDENT, far)
+            elif edges[2] is None and far[1] > cy and ox < oy and dx > dy and dy < indent_max:
+                edges[2] = (EDGE_INDENT, far)
+            elif edges[3] is None and far[0] < cx and ox > oy and dx < dy and dx < indent_max:
+                edges[3] = (EDGE_INDENT, far)
+
     for s, e, f, d in defects[:,0]:
         start = contour[s][0]
         end = contour[e][0]
         far = contour[f][0]
-        dx = np.abs(far[0] - cx)
-        dy = np.abs(far[1] - cy)
+        ox = np.abs(far[0] - cx)
+        oy = np.abs(far[1] - cy)
         if d < 256 * tab and dist(start, end) < tab_length:
-            if edges[0] is None and far[1] < cy and dx < dy and dx < tab_width:
-                edges[0] = EDGE_TAB
-            elif edges[1] is None and far[0] > cx and dx > dy and dy < tab_width:
-                edges[1] = EDGE_TAB
-            elif edges[2] is None and far[1] > cy and dx < dy and dx < tab_width:
-                edges[2] = EDGE_TAB
-            elif edges[3] is None and far[0] < cx and dx > dy and dy < tab_width:
-                edges[3] = EDGE_TAB
-    for i, e in enumerate(edges):
-        if e is None: edges[i] = EDGE_FLAT
+            if edges[0] is None and far[1] < cy and ox < oy and ox < tab_width:
+                edges[0] = (EDGE_TAB, far)
+            elif edges[1] is None and far[0] > cx and ox > oy and oy < tab_width:
+                edges[1] = (EDGE_TAB, far)
+            elif edges[2] is None and far[1] > cy and ox < oy and ox < tab_width:
+                edges[2] = (EDGE_TAB, far)
+            elif edges[3] is None and far[0] < cx and ox > oy and oy < tab_width:
+                edges[3] = (EDGE_TAB, far)
 
-    return edges
+    for i, e in enumerate(edges):
+        if e is None: edges[i] = (EDGE_FLAT, None)
+
+    # for kind, place in edges:
+        # if kind == EDGE_FLAT: continue
+        # cv2.putText(show, str(kind), place, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+
+    # cv2.imshow('edge', show)
+    return [e[0] for e in edges]
 
 def color_distribution(img, contour):
     '''Determine color distribution of a piece.

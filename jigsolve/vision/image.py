@@ -173,16 +173,20 @@ def get_pieces(img, contours, padding=10):
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
         yield box, crop(isolated, box), crop(mask, box)
 
-def orientation(binarized):
+def orientation(binarized, num_bins=10):
     '''Determine the orientation of a piece.
 
     This function takes a binarized image of a piece, and returns the angle
-    it is rotated, in a counterclockwise direction.
+    it is rotated, in a counterclockwise direction. Lines are collected into
+    bins ranging from 0 to pi radians, and the bin with the most lines is
+    averaged to find the orientation.
 
     Parameters
     ----------
     binarized : np.ndarray
         A binarized image containing a single puzzle piece.
+    num_bins : int
+        Number of bins to use.
 
     Returns
     -------
@@ -195,8 +199,8 @@ def orientation(binarized):
     # thetas.sort()
     # split = np.argmax(np.diff(thetas)) + 1
     # theta = np.mean(thetas[:split])
-    freq, bins = np.histogram(thetas, bins=20, range=(0, np.pi))
+    freq, bins = np.histogram(thetas, bins=num_bins, range=(0, np.pi))
     most = np.argmax(freq)
     big_bin = np.logical_and(thetas >= bins[most], thetas <= bins[most+1])
     theta = np.mean(thetas[big_bin])
-    return 90 - theta * 180 / np.pi
+    return (360 - theta * 180 / np.pi) % 90
