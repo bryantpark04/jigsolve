@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from jigsolve.utils import dist
+from jigsolve.utils import crop, dist
 
 def get_aruco(img):
     '''Find ArUco markers in an image.
@@ -112,7 +112,7 @@ def binarize(img, threshold=70):
         A binarized version of the input image.
     '''
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    return cv2.threshold(img_gray, threshold, 255, cv2.THRESH_OTSU)[1]
+    return cv2.threshold(img_gray, threshold, 255, cv2.THRESH_BINARY)[1]
 
 def find_contours(binarized, min_area=20000):
     '''Find contours in a binarized image.
@@ -161,36 +161,17 @@ def get_pieces(img, contours, padding=10):
         width of bounding box.
     h : int
         height of bounding box.
+    img : np.ndarray
+        Image of piece.
     '''
     for c in contours:
+        mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        cv2.drawContours(image=mask, contours=[c], contourIdx=0, color=255, thickness=cv2.FILLED)
         x, y, w, h = cv2.boundingRect(c)
-        yield x - padding, y - padding, w + 2 * padding, h + 2 * padding
-
-def get_mask(img, contours):
-    '''Get a mask from contours.
-
-    This function takes an image and a list of contours and returns a mask.
-    This mask is suitable for removing the entire background or quickly
-    producing a binarized image of any part of the image.
-
-    The mask is the same shape as the image, except the last dimension is
-    reduced to 1. Each point contained in a contour is set to 255, and the
-    rest of the mask is 0.
-
-    Parameters
-    ----------
-    img : np.ndarray
-        A BGR image.
-    contours : list
-        A list of contours.
-
-    Returns
-    -------
-    mask : np.ndarray
-        A mask including only the regions inside the contours.
-    '''
-    mask = np.zeros(img.shape[:2], dtype=np.uint8)
-    return cv2.drawContours(image=mask, contours=contours, contourIdx=-1, color=255, thickness=cv2.FILLED)
+        box = (x - padding, y - padding, w + 2 * padding, h + 2 * padding)
+        isolated = np.zeros_like(img)
+        cv2.bitwise_and(img, img, dst=isolated, mask=mask)
+        yield box, crop(isolated, box), crop(mask, box)
 
 def orientation(binarized):
     '''Determine the orientation of a piece.
@@ -209,9 +190,13 @@ def orientation(binarized):
         The angle the piece is rotated, counterclockwise in degrees.
     '''
     edges = cv2.Canny(binarized, 10, 50)
-    lines = cv2.HoughLines(edges, 1, np.pi/180, 40)
+    lines = cv2.HoughLines(edges, 1, np.pi/180, 30)
     thetas = lines[:,0,1]
-    thetas.sort()
-    split = np.argmax(np.diff(thetas)) + 1
-    theta = np.mean(thetas[:split])
+    # thetas.sort()
+    # split = np.argmax(np.diff(thetas)) + 1
+    # theta = np.mean(thetas[:split])
+    freq, bins = np.histogram(thetas, bins=20, range=(0, np.pi))
+    most = np.argmax(freq)
+    big_bin = np.logical_and(thetas >= bins[most], thetas <= bins[most+1])
+    theta = np.mean(thetas[big_bin])
     return 90 - theta * 180 / np.pi
