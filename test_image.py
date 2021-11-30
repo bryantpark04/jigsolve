@@ -8,10 +8,11 @@ from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces
 from jigsolve.vision.piece import edge_types
 
 def main():
-    test_image = Path(__file__) / '../../test_images/picam.jpg'
+    wd = Path(__file__).resolve().parent
+    test_image = wd / 'test_images/picam.jpg'
     img = cv2.imread(str(test_image.resolve()))
 
-    cal = np.load(Path(__file__) / '../../calibration/calibration.npz')
+    cal = np.load(wd / 'calibration/calibration.npz')
     img = cv2.undistort(img, cal['mtx'], cal['dist'], None, cal['newmtx'])
 
     # cv2.imwrite('undistort.png', img)
@@ -42,7 +43,6 @@ def main():
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
-        print(edges)
         cv2.imwrite('piece.png', piece)
         cv2.imshow('piece', piece)
         cv2.waitKey(0)
