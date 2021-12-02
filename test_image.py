@@ -9,7 +9,7 @@ from jigsolve.vision.piece import edge_types
 
 def main():
     wd = Path(__file__).resolve().parent
-    test_image = wd / 'test_images/picam.jpg'
+    test_image = wd / 'test_images/turck2.jpg'
     img = cv2.imread(str(test_image.resolve()))
 
     cal = np.load(wd / 'calibration/calibration.npz')
@@ -19,6 +19,7 @@ def main():
 
     # perspective transform
     corners = get_aruco(img)
+    print(len(corners))
     rect = rect_from_corners(corners)
     img = perspective_transform(img, rect)
 
@@ -43,8 +44,8 @@ def main():
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
-        cv2.imwrite('piece.png', piece)
-        cv2.imshow('piece', piece)
-        cv2.waitKey(0)
+        # cv2.imwrite('piece.png', piece)
+        # cv2.imshow('piece', piece)
+        # cv2.waitKey(0)
 
 if __name__ == '__main__': main()

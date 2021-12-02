@@ -26,19 +26,19 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
     edges : list
         A list of edges, clockwise starting from the top edge.
     '''
-    # show = np.zeros_like(piece)
-    # show = cv2.cvtColor(show, cv2.COLOR_GRAY2BGR)
+    show = np.zeros_like(piece)
+    show = cv2.cvtColor(show, cv2.COLOR_GRAY2BGR)
 
     piece = cv2.medianBlur(piece, 9)
     contours = cv2.findContours(image=piece, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)[0]
     contour = max(contours, key=cv2.contourArea)
-    # cv2.drawContours(show, [contour], 0, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.drawContours(show, [contour], 0, (255, 255, 255), 1, cv2.LINE_AA)
     # cv2.imwrite('deet0.png', show)
 
     M = cv2.moments(contour)
     cx = int(M['m10'] / M['m00'])
     cy = int(M['m01'] / M['m00'])
-    # cv2.circle(show, (cx, cy), 10, (0, 0, 255), cv2.FILLED)
+    cv2.circle(show, (cx, cy), 10, (0, 0, 255), cv2.FILLED)
     # cv2.imwrite('deet1.png', show)
 
     hull = cv2.convexHull(contour, returnPoints=False)
@@ -52,8 +52,8 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
         dy = np.abs(start[1] - end[1])
         ox = np.abs(far[0] - cx)
         oy = np.abs(far[1] - cy)
-        # cv2.line(show, start, end, (0, 0, 255), 1, cv2.LINE_AA)
-        # cv2.circle(show, far, 5, (0, 255, 255), cv2.FILLED)
+        cv2.line(show, start, end, (0, 0, 255), 1, cv2.LINE_AA)
+        cv2.circle(show, far, 5, (0, 255, 255), cv2.FILLED)
         if d > 256 * indent:
             if edges[0] is None and far[1] < cy and ox < oy and dx > dy and dy < indent_max:
                 edges[0] = (EDGE_INDENT, far)
@@ -83,12 +83,13 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
     for i, e in enumerate(edges):
         if e is None: edges[i] = (EDGE_FLAT, None)
 
-    # for kind, place in edges:
-    #     if kind == EDGE_FLAT: continue
-    #     cv2.putText(show, str(kind), place, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    for kind, place in edges:
+        if kind == EDGE_FLAT: continue
+        cv2.putText(show, str(kind), place, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
 
     # cv2.imwrite('deet2.png', show)
-    # cv2.imshow('edge', show)
+    cv2.imshow('edge', show)
+    cv2.waitKey(0)
     return [e[0] for e in edges]
 
 def color_distribution(img, contour):
