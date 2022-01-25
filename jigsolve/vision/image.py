@@ -153,16 +153,12 @@ def get_pieces(img, contours, padding=10):
 
     Yields
     -------
-    x : int
-        x coordinate of upper-left corner.
-    y : int
-        y coordinate of upper-left corner.
-    w : int
-        width of bounding box.
-    h : int
-        height of bounding box.
-    img : np.ndarray
+    box : tuple
+        Piece bounding box.
+    piece : np.ndarray
         Image of piece.
+    mask : np.ndarray
+        Mask for piece.
     '''
     for c in contours:
         mask = np.zeros(img.shape[:2], dtype=np.uint8)

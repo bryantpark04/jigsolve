@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from imutils import rotate_bound
 
+from jigsolve.models import PuzzlePiece
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import edge_types
 
@@ -27,12 +28,13 @@ def main():
     img_bw = binarize(img, threshold=10)
     contours = find_contours(img_bw, min_area=18000)
 
+    pieces = []
     for box, piece, mask in get_pieces(img, contours, padding=20):
         angle = orientation(mask, num_bins=16)
         if angle > 45: angle -= 90
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
-        print(edges)
+        pieces.append(PuzzlePiece(piece, mask, angle, box, edges, ()))
 
 if __name__ == '__main__': main()
