@@ -13,4 +13,11 @@ def solve_puzzle(edges):
     # format: {(0, 1, -1) : {(piece_1_idx, rotation), (piece_2_idx, rotation)}, ...}
     edge_map = {}
     for edge in edges:
-        pass
+        # iterate possible rotations
+        for rotation in range(4):
+            # shift edge tuple to rotate it counterclockwise
+            edge_rotated = edge[:rotation] + edge[rotation:]
+
+            # iterate the number of edges to record in edge_pattern, starting from the top and moving clockwise
+            for i in range(4):
+                edge_map[edge[:i + 1]] = 
