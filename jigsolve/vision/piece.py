@@ -56,13 +56,13 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
         cv2.circle(show, far, 5, (0, 255, 255), cv2.FILLED)
         if d > 256 * indent:
             if edges[0] is None and far[1] < cy and ox < oy and dx > dy and dy < indent_max:
-                edges[0] = (EDGE_INDENT, far)
+                edges[0] = EDGE_INDENT
             elif edges[1] is None and far[0] > cx and ox > oy and dx < dy and dx < indent_max:
-                edges[1] = (EDGE_INDENT, far)
+                edges[1] = EDGE_INDENT
             elif edges[2] is None and far[1] > cy and ox < oy and dx > dy and dy < indent_max:
-                edges[2] = (EDGE_INDENT, far)
+                edges[2] = EDGE_INDENT
             elif edges[3] is None and far[0] < cx and ox > oy and dx < dy and dx < indent_max:
-                edges[3] = (EDGE_INDENT, far)
+                edges[3] = EDGE_INDENT
 
     for s, e, f, d in defects[:,0]:
         start = contour[s][0]
@@ -72,25 +72,18 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
         oy = np.abs(far[1] - cy)
         if d < 256 * tab and dist(start, end) < tab_length:
             if edges[0] is None and far[1] < cy and ox < oy and ox < tab_width:
-                edges[0] = (EDGE_TAB, far)
+                edges[0] = EDGE_TAB
             elif edges[1] is None and far[0] > cx and ox > oy and oy < tab_width:
-                edges[1] = (EDGE_TAB, far)
+                edges[1] = EDGE_TAB
             elif edges[2] is None and far[1] > cy and ox < oy and ox < tab_width:
-                edges[2] = (EDGE_TAB, far)
+                edges[2] = EDGE_TAB
             elif edges[3] is None and far[0] < cx and ox > oy and oy < tab_width:
-                edges[3] = (EDGE_TAB, far)
+                edges[3] = EDGE_TAB
 
     for i, e in enumerate(edges):
-        if e is None: edges[i] = (EDGE_FLAT, None)
+        if e is None: edges[i] = EDGE_FLAT
 
-    for kind, place in edges:
-        if kind == EDGE_FLAT: continue
-        cv2.putText(show, str(kind), place, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-
-    # cv2.imwrite('deet2.png', show)
-    cv2.imshow('edge', show)
-    cv2.waitKey(0)
-    return [e[0] for e in edges]
+    return edges
 
 def color_distribution(img, contour):
     '''Determine color distribution of a piece.
