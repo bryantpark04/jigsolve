@@ -8,6 +8,12 @@ EDGE_INDENT = -1
 EDGE_TAB = 1
 EDGE_FLAT = 0
 
+# edge locations
+EDGE_UP = 0
+EDGE_RIGHT = 1
+EDGE_DOWN = 2
+EDGE_LEFT = 3
+
 def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=30):
     '''Determine edge types of a piece.
 
@@ -83,7 +89,7 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
     for i, e in enumerate(edges):
         if e is None: edges[i] = EDGE_FLAT
 
-    return edges
+    return tuple(edges)
 
 def color_distribution(img, contour):
     '''Determine color distribution of a piece.

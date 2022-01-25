@@ -5,6 +5,7 @@ import numpy as np
 from imutils import rotate_bound
 
 from jigsolve.models import PuzzlePiece
+from jigsolve.solver import solve_puzzle
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import edge_types
 
@@ -36,5 +37,8 @@ def main():
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
         pieces.append(PuzzlePiece(piece, mask, angle, box, edges, ()))
+
+    solution = solve_puzzle(pieces)
+    print(solution)
 
 if __name__ == '__main__': main()
