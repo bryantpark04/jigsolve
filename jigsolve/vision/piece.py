@@ -14,6 +14,9 @@ EDGE_RIGHT = 1
 EDGE_DOWN = 2
 EDGE_LEFT = 3
 
+# edge directions
+EDGE_DIRECTIONS = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
 def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=30):
     '''Determine edge types of a piece.
 
@@ -91,7 +94,7 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
 
     return tuple(edges)
 
-def color_distribution(img, contour):
+def color_distribution(img, mask):
     '''Determine color distribution of a piece.
 
     This function takes an image of a piece and returns a histogram of the
@@ -109,4 +112,4 @@ def color_distribution(img, contour):
     hist : np.ndarray
         A histogram of the colors inside the piece.
     '''
-    pass
+    return cv2.calcHist([img], [0, 1, 2], mask, [8, 8, 8], [0, 256, 0, 256, 0, 256])

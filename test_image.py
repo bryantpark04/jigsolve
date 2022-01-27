@@ -2,12 +2,29 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from imutils import rotate_bound
+from imutils import resize, rotate_bound
 
 from jigsolve.models import PuzzlePiece
-from jigsolve.solver import solve_puzzle
+from jigsolve.solver import eval_solution, puzzle_dimensions, solve_puzzle
+from jigsolve.utils import grid_iter, rotate
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
-from jigsolve.vision.piece import edge_types
+from jigsolve.vision.piece import color_distribution, edge_types
+
+import matplotlib.pyplot as plt
+
+def show_solution(idx, h, w, pieces, solution):
+    fig, axs = plt.subplots(h, w)
+    fig.suptitle(f'Solution {idx}')
+    ax_iter = iter(axs.flat)
+    for r, c in grid_iter(h, w):
+        i, r = solution[r, c]
+        img = rotate_bound(pieces[i].img, -90 * r)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ax = next(ax_iter)
+        ax.axis('off')
+        ax.imshow(img)
+    plt.savefig(f'solutions/{idx:04d}.png', dpi=300)
+    plt.close()
 
 def main():
     wd = Path(__file__).resolve().parent
@@ -36,9 +53,16 @@ def main():
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
-        pieces.append(PuzzlePiece(piece, mask, angle, box, edges, ()))
+        hist = color_distribution(piece, mask)
+        pieces.append(PuzzlePiece(piece, mask, hist, angle, box, edges))
 
-    solution = solve_puzzle(pieces)
-    print(solution)
+    (h, w), solutions = solve_puzzle(pieces)
+    solutions = list(filter(lambda s: s[0, 0] == (9, 3) and s[0, 1] == (11, 2) and s[0, 2] == (8, 2) and s[0, 3] == (2, 2), solutions))
+    print(len(solutions))
+    scores = [eval_solution(h, w, pieces, solution) for solution in solutions]
+    for idx in np.argsort(scores):
+        print(idx)
+        print(solutions[idx])
+        show_solution(idx, h, w, pieces, solutions[idx])
 
 if __name__ == '__main__': main()

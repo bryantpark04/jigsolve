@@ -67,10 +67,20 @@ def rotate(img, angle):
     M[1,2] += new_h / 2 - h / 2
     return cv2.warpAffine(img, M, (new_h, new_w))
 
-def grid(h, w):
+def grid_iter(h, w):
     for r in range(h):
         for c in range(w):
             yield r, c
 
 def edge_rotate(edges, r):
     return edges[r:] + edges[:r]
+
+def adjacent(h, w, r, c):
+    if r > 0 and c > 0:
+        yield r-1, c-1
+    if r > 0 and c < w-1:
+        yield r-1, c+1
+    if r < h-1 and c > 0:
+        yield r+1, c-1
+    if r < h-1 and c < w-1:
+        yield r+1, c+1
