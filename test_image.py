@@ -53,16 +53,17 @@ def main():
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
         edges = edge_types(mask)
-        hist = color_distribution(piece, mask)
+        hist = tuple(color_distribution(piece, mask))
         pieces.append(PuzzlePiece(piece, mask, hist, angle, box, edges))
 
     (h, w), solutions = solve_puzzle(pieces)
-    solutions = list(filter(lambda s: s[0, 0] == (9, 3) and s[0, 1] == (11, 2) and s[0, 2] == (8, 2) and s[0, 3] == (2, 2), solutions))
+    # solutions = list(filter(lambda s: s[0, 0] == (9, 3), solutions))
     print(len(solutions))
     scores = [eval_solution(h, w, pieces, solution) for solution in solutions]
     for idx in np.argsort(scores):
         print(idx)
         print(solutions[idx])
         show_solution(idx, h, w, pieces, solutions[idx])
+        break
 
 if __name__ == '__main__': main()

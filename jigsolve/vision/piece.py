@@ -104,12 +104,28 @@ def color_distribution(img, mask):
     ----------
     img : np.ndarray
         A BGR image containing a single puzzle piece.
-    contour : np.ndarray
-        The contour of a puzzle piece found by `cv2.findContours`.
+    mask : np.ndarray
+        The mask of a puzzle piece found by `get_pieces`.
 
-    Returns
-    -------
+    Yields
+    ------
     hist : np.ndarray
-        A histogram of the colors inside the piece.
+        The histograms of the colors inside the piece for each edge.
     '''
-    return cv2.calcHist([img], [0, 1, 2], mask, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+    h, w, _ = img.shape
+    l = w // 2
+    u = h // 2
+    masks = []
+    empty = np.zeros((h, w), dtype=np.uint8)
+    masks.append(empty.copy())
+    masks[-1][:u,:] = 255
+    masks.append(empty.copy())
+    masks[-1][:,l:] = 255
+    masks.append(empty.copy())
+    masks[-1][u:,:] = 255
+    masks.append(empty.copy())
+    masks[-1][:,:l] = 255
+    for m in masks:
+        newmask = empty.copy()
+        cv2.bitwise_and(m, mask, dst=newmask)
+        yield cv2.calcHist([img], [0, 1, 2], newmask, [8, 8, 8], [0, 256, 0, 256, 0, 256])

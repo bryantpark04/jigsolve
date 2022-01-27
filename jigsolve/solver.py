@@ -124,15 +124,21 @@ def solve_puzzle(pieces):
 
 def eval_solution(h, w, pieces, solution):
     @functools.lru_cache(maxsize=None)
-    def hist_compare(p1, p2):
-        return cv2.compareHist(pieces[p1].hist, pieces[p2].hist, cv2.HISTCMP_BHATTACHARYYA)
+    def hist_compare(pe1, pe2):
+        p1, e1 = pe1
+        p2, e2 = pe2
+        return cv2.compareHist(pieces[p1].hist[e1], pieces[p2].hist[e2], cv2.HISTCMP_BHATTACHARYYA)
     score = 0
     for r, c in grid_iter(h, w):
-        p1 = solution[r, c][0]
-        for ar, ac in adjacent(h, w, r, c):
-            p2 = solution[ar, ac][0]
-            if p1 < p2:
-                score += hist_compare(p1, p2)
-            else:
-                score += hist_compare(p2, p1)
+        p1, r1 = solution[r, c]
+        e1 = edge_rotate(pieces[p1].edges, r1)
+        for i, e in enumerate(e1):
+            if e == EDGE_FLAT: continue
+            # save and set adjacent cell
+            dr, dc = EDGE_DIRECTIONS[i]
+            ar, ac = r + dr, c + dc
+            p2, r2 = solution[ar, ac]
+            pe1 = (p1, (i + r1) % 4)
+            pe2 = (p2, (i + r2 + 2) % 4)
+            score += hist_compare(*sorted([pe1, pe2]))
     return score

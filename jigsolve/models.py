@@ -5,7 +5,7 @@ import numpy as np
 class PuzzlePiece:
     img: np.ndarray = field(repr=False)
     mask: np.ndarray = field(repr=False)
-    hist: np.ndarray = field(repr=False)
+    hist: tuple[np.ndarray] = field(repr=False)
     img_rot: float
     box: tuple[int]
     edges: tuple[int]
