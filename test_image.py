@@ -6,7 +6,7 @@ from imutils import resize, rotate_bound
 
 from jigsolve.models import PuzzlePiece
 from jigsolve.solver import eval_solution, puzzle_dimensions, solve_puzzle
-from jigsolve.utils import grid_iter, rotate
+from jigsolve.utils import crop, grid_iter, rotate
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types
 
@@ -20,6 +20,22 @@ def show_solution(idx, h, w, pieces, solution):
         i, r = solution[r, c]
         img = rotate_bound(pieces[i].img, -90 * r)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        # find contour for the piece
+        bin = binarize(img, threshold=10)
+        contour = max(find_contours(bin), key=cv2.contourArea)
+        
+        # make background of each piece white
+        fill_color = [255, 255, 255] # BGR
+        mask_value = 255 # white
+        stencil  = np.zeros(img.shape[:-1]).astype(np.uint8)
+        cv2.fillPoly(stencil, [contour], mask_value)
+        img[stencil != mask_value] = fill_color
+        
+        # crop image to fit the piece
+        box = cv2.boundingRect(contour)
+        img = crop(img, box)
+
         ax = next(ax_iter)
         ax.axis('off')
         ax.imshow(img)
