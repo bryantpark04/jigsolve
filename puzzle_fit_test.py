@@ -109,6 +109,39 @@ def find_x_on_side_contour(y, side_contour):
             return x
     return None
 
+def puzzle_pieces_alignments(pieces, solution):
+    '''Finds relative positions and rotations needed to fit pieces together.
+
+    Parameters
+    ----------
+    pieces : list[PuzzlePiece]
+        List of puzzle pieces.
+    solution : dict[tuple[int], tuple[int]]
+        Maps grid positions to piece indices and rotations.
+
+    Returns
+    -------
+    idk, finish this later ig
+    '''
+    pass
+
+def two_puzzle_piece_alignment(img_1, img_2):
+    '''Finds relative positions and rotations needed to fit two pieces horizontally.
+
+    Parameters
+    ----------
+    img_1 : np.ndarray
+        Image of the left piece, isolated.
+    img_2 : np.ndarray
+        Image of the right piece, isolated. If the pieces fit vertically,
+        the images should be rotated before being used as fields for this
+        function.
+    
+    Returns
+    -------
+    idk
+    '''
+
 def main():
     # read test mask images
     img_0 = cv2.imread("puzzle_fit_images/img_0.png")
