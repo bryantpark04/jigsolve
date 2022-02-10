@@ -113,16 +113,16 @@ def color_distribution(img, mask):
         The histograms of the colors inside the piece for each edge.
     '''
     h, w, _ = img.shape
-    l = w // 2
-    u = h // 2
+    l = w // 3
+    u = h // 3
     masks = []
     empty = np.zeros((h, w), dtype=np.uint8)
     masks.append(empty.copy())
     masks[-1][:u,:] = 255
     masks.append(empty.copy())
-    masks[-1][:,l:] = 255
+    masks[-1][:,-l:] = 255
     masks.append(empty.copy())
-    masks[-1][u:,:] = 255
+    masks[-1][-u:,:] = 255
     masks.append(empty.copy())
     masks[-1][:,:l] = 255
     for m in masks:
