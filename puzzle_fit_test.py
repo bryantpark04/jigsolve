@@ -125,25 +125,204 @@ def puzzle_pieces_alignments(pieces, solution):
     '''
     pass
 
-def two_puzzle_piece_alignment(img_1, img_2):
-    '''Finds relative positions and rotations needed to fit two pieces horizontally.
+def two_puzzle_piece_alignment(img_0, img_1):
+    '''Finds relative positions (and rotations?) needed to fit two pieces horizontally.
 
     Parameters
     ----------
-    img_1 : np.ndarray
+    img_0 : np.ndarray
         Image of the left piece, isolated.
-    img_2 : np.ndarray
+    img_1 : np.ndarray
         Image of the right piece, isolated. If the pieces fit vertically,
         the images should be rotated before being used as fields for this
         function.
     
     Returns
     -------
-    idk
+    displacements : tuple[int]
+        x displacement, y displacement of image 1 necessary for the puzzle
+        pieces to align.
     '''
+    # get image dimensions
+    h0, w0 = img_0.shape[:2]
+    h1, w1 = img_1.shape[:2]
+
+    # find contours
+    bin_0 = binarize(img_0, threshold=10)
+    bin_1 = binarize(img_1, threshold=10)
+    contour_0 = max(find_contours(bin_0), key=cv2.contourArea)
+    contour_1 = max(find_contours(bin_1), key=cv2.contourArea)
+
+    # find side contours
+    side_contour_0 = get_side_contour(img_0, contour_0, 0)
+    side_contour_1 = get_side_contour(img_1, contour_1, 1)
+
+    # Find y-displacement for image 1 that matches image 0 (y_dis_final).
+    # Start with side contours aligned on the top. Minimize standard
+    # deviation of the horizontal distances between the side contours.
+    # -------------------------------------------------------------------
+
+    # find y ranges of side contours
+    # for image 0
+    min_y = h0
+    max_y = 0
+    for point in side_contour_0:
+        if point[1] > max_y:
+            max_y = point[1]
+        if point[1] < min_y:
+            min_y = point[1]
+    y_range_0 = [min_y, max_y]
+    # for image 1
+    min_y = h1
+    max_y = 0
+    for point in side_contour_1:
+        if point[1] > max_y:
+            max_y = point[1]
+        if point[1] < min_y:
+            min_y = point[1]
+    y_range_1 = [min_y, max_y]
+
+    # determine whether image 1 moves up or down
+    move_up = False
+    if y_range_1[1] - y_range_1[0] > y_range_0[1] - y_range_0[0]:
+        # if side_contour_1 has more vertical range than side_contour_0
+        move_up = True
+    
+    # iterate y-displacements
+    reached_end = False
+    y_dis_test = y_range_0[0] - y_range_1[0] # y displacement of image 1 being tested
+    min_std = 9999
+    y_dis_final = y_dis_test # IMPORTANT VARIABLE
+    while not reached_end:
+        # iterate over y values within y_range_0, with step 2 to find x displacements
+        x_displacements = []
+        for y in range(y_range_0[0], y_range_0[1], 2):
+            # if y is also within y_range_1
+            if y >= y_range_1[0] + y_dis_test and y <= y_range_1[1] + y_dis_test:
+                # get x values on side_contours
+                    x0 = find_x_on_side_contour(y, side_contour_0)
+                    x1 = find_x_on_side_contour(y - y_dis_test, side_contour_1)
+                    x_displacements.append(x1 - x0)
+        
+        # find standard deviation of x displacements
+        std = np.std(x_displacements)
+        # replace min_std if lower
+        if std < min_std:
+            min_std = std
+            y_dis_final = y_dis_test
+
+        # check for end of loop: if bottoms of contours aligned
+        if y_range_0[1] == y_range_1[1] + y_dis_test:
+            reached_end = True
+
+        # increment
+        if move_up:
+            y_dis_test -= 1
+        else: # move_up == False
+            y_dis_test += 1
+
+    # Find x-displacement for image 1 that matches image 0 (x_dis_final).
+    # Start with side contours lined up, such that img_0 is on the left
+    # img_1 is on the right. Minimize mean of horizontal distances between
+    # side contours, with y_dis_final applied to img_1.
+    # --------------------------------------------------------------------
+
+    # find x ranges of side contours
+    # for image 0
+    min_x = h0
+    max_x = 0
+    for point in side_contour_0:
+        if point[0] > max_x:
+            max_x = point[0]
+        if point[0] < min_x:
+            min_x = point[0]
+    x_range_0 = [min_x, max_x]
+    # for image 1
+    min_x = h1
+    max_x = 0
+    for point in side_contour_1:
+        if point[0] > max_x:
+            max_x = point[0]
+        if point[0] < min_x:
+            min_x = point[0]
+    x_range_1 = [min_x, max_x]
+
+    # iterate x-displacements
+    reached_end = False
+    x_dis_test = x_range_0[1] - x_range_1[0]
+    min_avg_dist = 9999
+    x_dis_final = x_dis_test # IMPORTANT VARIABLE
+    while not reached_end:
+        # iterate over y values within y_range_0, with step 2 to find x displacements
+        x_displacements = []
+        for y in range(y_range_0[0], y_range_0[1], 2):
+            # if y is also within y_range_1
+            if y >= y_range_1[0] + y_dis_final and y <= y_range_1[1] + y_dis_final:
+                # get x values on side_contours
+                    x0 = find_x_on_side_contour(y, side_contour_0)
+                    x1 = find_x_on_side_contour(y - y_dis_final, side_contour_1) + x_dis_test
+                    x_displacements.append(x1 - x0)
+        
+        # find average of x distances
+        avg_dist = abs(np.mean(x_displacements))
+        # replace min_avg_dist if lower
+        if avg_dist < min_avg_dist:
+            min_avg_dist = avg_dist
+            x_dis_final = x_dis_test
+
+        # check for end of loop: if left sides of image 0 and image 1 match
+        if x_range_0[0] == x_range_1[0] + x_dis_test:
+            reached_end = True
+        
+        # increment
+        x_dis_test -= 1
+
+    return -x_dis_final, y_dis_final
 
 def main():
-    # read test mask images
+    # read test images
+    img_0 = cv2.imread("puzzle_fit_images/img_0.png")
+    h0, w0 = img_0.shape[:2]
+    img_1 = cv2.imread("puzzle_fit_images/img_1.png")
+    h1, w1 = img_1.shape[:2]
+
+    # TEST: increase height of img_1
+    canvas = np.zeros((450, 343, 3), np.uint8)
+    x_diff = 0
+    y_diff = 50
+    canvas[y_diff:y_diff+img_1.shape[0], x_diff:x_diff+img_1.shape[1]] = img_1
+    img_1 = canvas
+
+    x_dis_final, y_dis_final = two_puzzle_piece_alignment(img_0, img_1)
+
+    # show image with unaligned pieces
+    canvas = np.zeros((700, 1000, 3), np.uint8)
+    # draw img_0
+    x_diff = 0
+    y_diff = 100
+    canvas[y_diff:y_diff+img_0.shape[0], x_diff:x_diff+img_0.shape[1]] = img_0
+    # draw img_1
+    x_diff = 400
+    y_diff = 100
+    canvas[y_diff:y_diff+img_1.shape[0], x_diff:x_diff+img_1.shape[1]] = img_1
+    cv2.imshow("test", canvas)
+    cv2.waitKey(0)
+
+    # show image with aligned pieces
+    canvas = np.zeros((700, 1000, 3), np.uint8)
+    # draw img_0
+    x_diff = 0
+    y_diff = 100
+    canvas[y_diff:y_diff+img_0.shape[0], x_diff:x_diff+img_0.shape[1]] = img_0
+    # draw img_1
+    x_diff = 400 + x_dis_final
+    y_diff = 100 + y_dis_final
+    canvas[y_diff:y_diff+img_1.shape[0], x_diff:x_diff+img_1.shape[1]] = img_1
+    cv2.imshow("test", canvas)
+    cv2.waitKey(0)
+
+def old_main():
+    # read test images
     img_0 = cv2.imread("puzzle_fit_images/img_0.png")
     h0, w0 = img_0.shape[:2]
     img_1 = cv2.imread("puzzle_fit_images/img_1.png")
