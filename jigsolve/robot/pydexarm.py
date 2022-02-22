@@ -46,7 +46,7 @@ class Dexarm:
         """
         self._send_cmd("M1112\r")
 
-    def set_workorigin(self):
+    def set_work_origin(self):
         """
         Set the current position as the new work origin.
         """
@@ -161,7 +161,7 @@ class Dexarm:
                 if serial_str.find("ok") > -1:
                     return x, y, z, e, a, b, c
 
-    def dealy_ms(self, value):
+    def delay_ms(self, value):
         """
         Pauses the command queue and waits for a period of time in ms
 
@@ -170,7 +170,7 @@ class Dexarm:
         """
         self._send_cmd("G4 P" + str(value) + '\r')
 
-    def dealy_s(self, value):
+    def delay_s(self, value):
         """
         Pauses the command queue and waits for a period of time in s
 
@@ -191,9 +191,9 @@ class Dexarm:
         """
         self._send_cmd("M1000\r")
 
-    def soft_gripper_nature(self):
+    def soft_gripper_neutral(self):
         """
-        Release the soft gripper to nature state
+        Release the soft gripper to neutral state
         """
         self._send_cmd("M1002\r")
 
@@ -215,9 +215,9 @@ class Dexarm:
         """
         self._send_cmd("M1001\r")
 
-    def air_picker_nature(self):
+    def air_picker_neutral(self):
         """
-        Release to nature state
+        Release to neutral state
         """
         self._send_cmd("M1002\r")
 
