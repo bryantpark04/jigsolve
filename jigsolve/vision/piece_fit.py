@@ -123,10 +123,55 @@ def puzzle_pieces_alignments(pieces, solution):
     -------
     idk, finish this later ig
     '''
-    pass
 
-def two_puzzle_piece_alignment(img_0, img_1):
-    '''Finds relative positions (and rotations?) needed to fit two pieces horizontally.
+    # find width and height of puzzle grid from solution
+    height = max(solution.keys(), key=lambda pos: pos[0])[0] + 1
+    width = max(solution.keys(), key=lambda pos: pos[1])[1] + 1
+
+    # make a data structure mapping grid position to piece image
+    pieces_grid = [[0]*width]*height
+    for r in range(height):
+        for c in range(width):
+            piece_idx, piece_rot = solution[(r, c)]
+            piece_img_rot = pieces[piece_idx]
+            piece_img = 0
+
+            # rotate piece image
+            if piece_rot == 0: # no rotation
+                piece_img = piece_img_rot
+            elif piece_rot == 1: # 90 deg ccw
+                piece_img = cv2.rotate(piece_img_rot, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            elif piece_rot == 2: # 180 deg
+                piece_img = cv2.rotate(piece_img_rot, cv2.ROTATE_180)
+            elif piece_rot == 3: # 270 deg ccw (or 90 deg cw)
+                piece_img = cv2.rotate(piece_img_rot, cv2.ROTATE_90_CLOCKWISE)
+            
+            # add piece_img to pieces_grid
+            pieces_grid[r][c] = piece_img
+
+    # Starting at the top left corner of the solution grid, move down while
+    # aligning pieces. Then, start at the top of the second column and move
+    # down. For each piece, take the average of the displacement found from
+    # aligning with the piece above and the piece below.
+    
+    # set alignment of top left piece
+    displacements = [[(100, 100)]*width]*height # index of top left: [0][0]
+
+    # set alignment of left-most column.
+    # iterate rest of the rows in the solution grid.
+    for r in range(1, height):
+        displacements = two_puzzle_piece_align_vertical() # CONTINUE here
+
+    # # iterate rest of the columns in the solution grid
+    # for c in range(1, width):
+    #     # iterate rest of the rows in the solution grid
+    #     for r in range(1, height):
+
+            
+    print('test')
+
+def two_puzzle_piece_align_horizontal(img_0, img_1):
+    '''Finds relative displacements of image 1 needed to fit two pieces horizontally.
 
     Parameters
     ----------
@@ -278,3 +323,31 @@ def two_puzzle_piece_alignment(img_0, img_1):
         x_dis_test -= 1
 
     return -x_dis_final, y_dis_final
+
+def two_puzzle_piece_align_vertical(img_0, img_1):
+    '''Finds relative displacements of image 1 needed to fit two pieces vertically.
+
+    Parameters
+    ----------
+    img_0 : np.ndarray
+        Image of the left piece, isolated.
+    img_1 : np.ndarray
+        Image of the right piece, isolated.
+    
+    Returns
+    -------
+    displacements : tuple[int]
+        x displacement, y displacement of image 1 necessary for the puzzle
+        pieces to align.
+    '''
+    # rotate images 90 deg counter-clockwise
+    img_0_rot = cv2.rotate(img_0, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    img_1_rot = cv2.rotate(img_1, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    # find displacements in rotated coordinate plane
+    x_dis_rot, y_dis_rot = two_puzzle_piece_align_horizontal(img_0_rot, img_1_rot)
+
+    # rotate displacements back into original coordinate plane
+    x_dis = -y_dis_rot
+    y_dis = x_dis_rot
+    return x_dis, y_dis

@@ -9,6 +9,7 @@ from jigsolve.solver import eval_solution, puzzle_dimensions, solve_puzzle
 from jigsolve.utils import crop, grid_iter, rotate
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types
+from jigsolve.vision.piece_fit import puzzle_pieces_alignments
 
 import matplotlib.pyplot as plt
 
@@ -81,5 +82,8 @@ def main():
         print(solutions[idx])
         show_solution(idx, h, w, pieces, solutions[idx])
         break
+
+    # test piece alignment
+    puzzle_pieces_alignments(pieces, solutions[idx])
 
 if __name__ == '__main__': main()
