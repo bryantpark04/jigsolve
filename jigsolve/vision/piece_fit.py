@@ -1,3 +1,4 @@
+from copyreg import dispatch_table
 import numpy as np
 import cv2
 from jigsolve.vision.image import find_contours, binarize
@@ -155,20 +156,34 @@ def puzzle_pieces_alignments(pieces, solution):
     # aligning with the piece above and the piece below.
     
     # set alignment of top left piece
-    displacements = [[(100, 100)]*width]*height # index of top left: [0][0]
+    disp = [[(100, 100)]*width]*height # index of top left: [0][0]
 
     # set alignment of left-most column.
     # iterate rest of the rows in the solution grid.
     for r in range(1, height):
-        displacements = two_puzzle_piece_align_vertical() # CONTINUE here
+        x_disp, y_disp = two_puzzle_piece_align_vertical(pieces_grid[r - 1][0], pieces_grid[r][0])
+        disp[r][0] = (x_disp + disp[r - 1][0][0], y_disp + disp[r - 1][0][1])
 
-    # # iterate rest of the columns in the solution grid
-    # for c in range(1, width):
-    #     # iterate rest of the rows in the solution grid
-    #     for r in range(1, height):
+    # iterate rest of the columns in the solution grid
+    for c in range(1, width):
+        # set alignment of top piece in column c
+        x_disp, y_disp = two_puzzle_piece_align_horizontal(pieces_grid[0][c - 1], pieces_grid[0][c])
+        disp[0][c] = (x_disp + disp[0][c - 1][0], y_disp + disp[0][c - 1][1])
 
-            
-    print('test')
+        # iterate rest of the pieces in column c
+        for r in range(1, height):
+            # get displacements from horizontal pieces
+            x_disp_horiz, y_disp_horiz = two_puzzle_piece_align_horizontal(pieces_grid[r][c - 1], pieces_grid[r][c])
+
+            # get displacements from vertical pieces
+            x_disp_vert, y_disp_vert = two_puzzle_piece_align_vertical(pieces_grid[r - 1][c], pieces_grid[r][c])
+
+            # set piece displacement to average displacements
+            x_disp_avg = (x_disp_horiz + x_disp_vert) / 2
+            y_disp_avg = (y_disp_horiz + y_disp_vert) / 2
+            disp[r][c] = (x_disp_avg, y_disp_avg)
+    
+    return disp
 
 def two_puzzle_piece_align_horizontal(img_0, img_1):
     '''Finds relative displacements of image 1 needed to fit two pieces horizontally.
