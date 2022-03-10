@@ -134,7 +134,7 @@ def piece_displacements(pieces, solution):
     pieces_grid = np.empty((h, w), dtype=object)
     for r, c in grid_iter(h, w):
         pi, pr = solution[r, c]
-        piece_img = rotate_piece(pieces[pi].img, pr)
+        piece_img = rotate_piece(pieces[pi].mask, pr)
         pieces_grid[r, c] = piece_img
 
     # Starting at the top left corner of the solution grid, move down while
@@ -197,10 +197,8 @@ def piece_align_h(img_0, img_1):
     h1 = img_1.shape[0]
 
     # find contours
-    bin_0 = binarize(img_0, threshold=10)
-    bin_1 = binarize(img_1, threshold=10)
-    contour_0 = max(find_contours(bin_0), key=cv2.contourArea)
-    contour_1 = max(find_contours(bin_1), key=cv2.contourArea)
+    contour_0 = max(find_contours(img_0), key=cv2.contourArea)
+    contour_1 = max(find_contours(img_1), key=cv2.contourArea)
 
     # find side contours
     side_contour_0 = get_side_contour(img_0, contour_0, 0)
@@ -302,8 +300,8 @@ def piece_align_v(img_0, img_1):
         pieces to align.
     '''
     # rotate images 90 deg counter-clockwise
-    img_0_rot = img_0.transpose(1, 0, 2)
-    img_1_rot = img_1.transpose(1, 0, 2)
+    img_0_rot = img_0.T
+    img_1_rot = img_1.T
 
     # find displacements in rotated coordinate plane
     x_dis_rot, y_dis_rot = piece_align_h(img_0_rot, img_1_rot)
