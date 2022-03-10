@@ -3,13 +3,14 @@ from pathlib import Path
 import cv2
 import numpy as np
 from imutils import resize, rotate_bound
+import pickle
 
 from jigsolve.models import PuzzlePiece
 from jigsolve.solver import eval_solution, puzzle_dimensions, solve_puzzle
 from jigsolve.utils import crop, grid_iter, rotate
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types
-from jigsolve.vision.piece_fit import puzzle_pieces_alignments
+from jigsolve.vision.piece_fit import test_piece_fit
 
 import matplotlib.pyplot as plt
 
@@ -65,7 +66,7 @@ def main():
 
     pieces = []
     for box, piece, mask in get_pieces(img, contours, padding=20):
-        angle = orientation(mask, num_bins=16)
+        angle = orientation(mask, num_bins=26)
         if angle > 45: angle -= 90
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
@@ -84,6 +85,7 @@ def main():
         break
 
     # test piece alignment
-    puzzle_pieces_alignments(pieces, solutions[idx])
+    test_piece_fit(pieces, solutions[idx])
+    
 
 if __name__ == '__main__': main()
