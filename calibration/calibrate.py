@@ -13,7 +13,7 @@ obj[:,:2] = np.mgrid[0:board[0], 0:board[1]].T.reshape(-1, 2)
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-images = Path(__file__).parent / 'images'
+images = Path(__file__).parent.parent / 'img' / 'calibration'
 for path in tqdm(images.glob('*.jpg')):
   img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
   ret, corners = cv2.findChessboardCorners(img, board, None)
