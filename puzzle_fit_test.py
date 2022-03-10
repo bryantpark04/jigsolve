@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from jigsolve.vision.image import find_contours, binarize
-from jigsolve.vision.piece_fit import two_puzzle_piece_alignment
+from jigsolve.solver.fit import two_puzzle_piece_alignment
 
 def main():
     # read test images

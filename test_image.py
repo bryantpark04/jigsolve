@@ -3,18 +3,18 @@ from pathlib import Path
 import cv2
 import numpy as np
 from imutils import resize, rotate_bound
-import pickle
 
 from jigsolve.models import PuzzlePiece
-from jigsolve.solver import eval_solution, puzzle_dimensions, solve_puzzle
-from jigsolve.utils import crop, grid_iter, rotate
+from jigsolve.solver.approx import eval_solution, solve_puzzle
+from jigsolve.utils import crop, grid_iter, rotate_piece
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types
-from jigsolve.vision.piece_fit import test_piece_fit
+from jigsolve.solver.fit import piece_displacements
 
 import matplotlib.pyplot as plt
 
-def show_solution(idx, h, w, pieces, solution):
+def show_solution(idx, pieces, solution):
+    h, w = solution.shape
     fig, axs = plt.subplots(h, w)
     fig.suptitle(f'Solution {idx}')
     ax_iter = iter(axs.flat)
@@ -26,14 +26,14 @@ def show_solution(idx, h, w, pieces, solution):
         # find contour for the piece
         bin = binarize(img, threshold=10)
         contour = max(find_contours(bin), key=cv2.contourArea)
-        
+
         # make background of each piece white
         fill_color = [255, 255, 255] # BGR
         mask_value = 255 # white
         stencil  = np.zeros(img.shape[:-1]).astype(np.uint8)
         cv2.fillPoly(stencil, [contour], mask_value)
         img[stencil != mask_value] = fill_color
-        
+
         # crop image to fit the piece
         box = cv2.boundingRect(contour)
         img = crop(img, box)
@@ -74,18 +74,34 @@ def main():
         hist = tuple(color_distribution(piece, mask))
         pieces.append(PuzzlePiece(piece, mask, hist, angle, box, edges))
 
-    (h, w), solutions = solve_puzzle(pieces)
+    solutions = solve_puzzle(pieces)
     # solutions = list(filter(lambda s: s[0, 0] == (9, 3), solutions))
     print(len(solutions))
-    scores = [eval_solution(h, w, pieces, solution) for solution in solutions]
-    for idx in np.argsort(scores):
-        print(idx)
-        print(solutions[idx])
-        show_solution(idx, h, w, pieces, solutions[idx])
-        break
+    scores = [eval_solution(pieces, solution) for solution in solutions]
+    # for idx in np.argsort(scores):
+    #     print(idx)
+    #     print(solutions[idx])
+    #     # show_solution(idx, pieces, solutions[idx])
+    #     break
 
+    solution = solutions[np.argsort(scores)[0]]
     # test piece alignment
-    test_piece_fit(pieces, solutions[idx])
-    
+    disp = piece_displacements(pieces, solution)
+
+    h, w = solution.shape
+    canvas = np.zeros((h * 500, w * 500, 3), np.uint8)
+    for r, c in grid_iter(h, w):
+        temp = np.zeros_like(canvas)
+        pi, pr = solution[r, c]
+        img = rotate_piece(pieces[pi].img, pr)
+        xd, yd = disp[r, c]
+        ih, iw, _ = img.shape
+        temp[yd:yd + ih, xd:xd + iw] = img
+        canvas = cv2.add(canvas, temp)
+
+    small = resize(canvas, width=800)
+    cv2.imshow('test', small)
+    cv2.waitKey(0)
+
 
 if __name__ == '__main__': main()

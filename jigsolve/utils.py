@@ -84,3 +84,14 @@ def adjacent(h, w, r, c):
         yield r+1, c-1
     if r < h-1 and c < w-1:
         yield r+1, c+1
+
+def rotate_piece(img, rot):
+    # rotate piece image
+    if rot == 0: # no rotation
+        return img
+    elif rot == 1: # 90 deg ccw
+        return cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    elif rot == 2: # 180 deg
+        return cv2.rotate(img, cv2.ROTATE_180)
+    elif rot == 3: # 270 deg ccw (or 90 deg cw)
+        return cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)

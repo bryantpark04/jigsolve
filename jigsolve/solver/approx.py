@@ -2,7 +2,7 @@ import cv2
 import functools
 import numpy as np
 
-from jigsolve.utils import adjacent, edge_rotate, grid_iter
+from jigsolve.utils import edge_rotate, grid_iter
 from jigsolve.vision.piece import EDGE_DIRECTIONS, EDGE_DOWN, EDGE_FLAT, EDGE_LEFT, EDGE_RIGHT, EDGE_UP
 
 def puzzle_dimensions(pieces):
@@ -57,10 +57,9 @@ def solve_puzzle(pieces):
     lookup, all = preprocess_edges(pieces)
     h, w = puzzle_dimensions(pieces)
     solutions = []
-    grid = {}
-    possible = {}
+    grid = np.empty((h, w), dtype=tuple)
+    possible = np.empty((h, w), dtype=set)
     for r, c in grid_iter(h, w):
-        grid[r, c] = None
         possible[r, c] = all.copy()
     for c in range(w):
         possible[0, c] &= lookup[EDGE_UP, EDGE_FLAT]
@@ -120,9 +119,10 @@ def solve_puzzle(pieces):
         return
 
     solve_puzzle_util()
-    return (h, w), solutions
+    return solutions
 
-def eval_solution(h, w, pieces, solution):
+def eval_solution(pieces, solution):
+    h, w = solution.shape
     @functools.lru_cache(maxsize=None)
     def hist_compare(pe1, pe2):
         p1, e1 = pe1
