@@ -42,13 +42,13 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
     contours = cv2.findContours(image=piece, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)[0]
     contour = max(contours, key=cv2.contourArea)
     cv2.drawContours(show, [contour], 0, (255, 255, 255), 1, cv2.LINE_AA)
-    # cv2.imwrite('deet0.png', show)
+    # cv2.imwrite('img/out/deet0.png', show)
 
     M = cv2.moments(contour)
     cx = int(M['m10'] / M['m00'])
     cy = int(M['m01'] / M['m00'])
     cv2.circle(show, (cx, cy), 10, (0, 0, 255), cv2.FILLED)
-    # cv2.imwrite('deet1.png', show)
+    # cv2.imwrite('img/out/deet1.png', show)
 
     hull = cv2.convexHull(contour, returnPoints=False)
     defects = cv2.convexityDefects(contour, hull)

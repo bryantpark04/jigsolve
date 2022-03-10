@@ -41,12 +41,12 @@ def show_solution(idx, pieces, solution):
         ax = next(ax_iter)
         ax.axis('off')
         ax.imshow(img)
-    plt.savefig(f'solutions/{idx:04d}.png', dpi=300)
+    plt.savefig(f'img/solutions/{idx:04d}.png', dpi=300)
     plt.close()
 
 def main():
     wd = Path(__file__).resolve().parent
-    test_image = wd / 'test_images/turck2.jpg'
+    test_image = wd / 'img/misc_test/turck2.jpg'
     img = cv2.imread(str(test_image.resolve()))
 
     cal = np.load(wd / 'calibration/calibration.npz')

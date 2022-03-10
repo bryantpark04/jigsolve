@@ -28,7 +28,6 @@ def main():
 
     # cv2.imwrite('undistort.png', img)
 
-
     cv2.imshow("cam", resize(img, width=800))
 
     cv2.waitKey(0)
