@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 from scipy.interpolate import interp1d
 
-from jigsolve.vision.image import find_contours, binarize
+from jigsolve.vision.image import find_contours
 from jigsolve.utils import grid_iter, rotate_piece
 
-def get_side_contour(img, contour, side):
+def get_side_contour(img, contour, left):
     '''Find a subsection of a contour.
 
     Returns the subsection of a contour that outlines the given
@@ -18,9 +18,8 @@ def get_side_contour(img, contour, side):
         A cropped puzzle image
     contour : np.ndarray
         A single contour which outlines the piece in img
-    side : int
-        Which side to return the contour of. 0 is right,
-        1 is left.
+    left : bool
+        If True, returns the left side. Otherwise, returns the right side.
 
     Returns
     -------
@@ -28,89 +27,17 @@ def get_side_contour(img, contour, side):
         A subsection of the given contour, outlining only the given
         side of the puzzle piece.
     '''
-    contour = contour[:, 0].tolist()
-
-    # find diagonal lines in img, with form x = my + b
+    c = contour[:, 0]
     h, w = img.shape[:2]
-    # line 1: top left to bottom right
-    m1 = w/h
-    b1 = 0
-    # line 2: bottom left to top right
-    m2 = -w/h
-    b2 = w
-
-    # find the row where the diagonal lines intersect
-    intersect_row = int(h / 2)
-
-    def eval_line(y, m, b):
-        '''Evaluate x of given row for given line
-        '''
-        return m * y + b
-
-    def point_in_side(point):
-        '''Check whether the given point is part of the given side.
-        '''
-        if side == 0: # checking right side
-            if point[1] < intersect_row:
-                if eval_line(point[1], m2, b2) < point[0]:
-                    return True
-                else:
-                    return False
-            else:
-                if eval_line(point[1], m1, b1) < point[0]:
-                    return True
-                else:
-                    return False
-        else: # side == 1, checking left side
-            if point[1] < intersect_row:
-                if eval_line(point[1], m1, b1) > point[0]:
-                    return True
-                else:
-                    return False
-            else:
-                if eval_line(point[1], m2, b2) > point[0]:
-                    return True
-                else:
-                    return False
-
-    # find a point in contour outside of the side to be returned,
-    # as the starting point for iterating contour points
-    starting_idx = 0
-    for i, point in enumerate(contour):
-        if not point_in_side(point):
-            starting_idx = i
-
-    # beginning at starting_idx, iterate contour and find portion that
-    # is in the given side
-    side_contour = []
-    contour_shifted = contour[starting_idx:] + contour[:starting_idx]
-    for point in contour_shifted:
-        if point_in_side(point):
-            side_contour.append([point[0], point[1]])
-    side_contour = np.array(side_contour)
-    return side_contour
-
-def find_x_on_side_contour(y, side_contour):
-    '''Find the x value corresponding to a given y value in the side contour.
-    '''
-    # iterate over indices of points in side_contour
-    for i in range(len(side_contour) - 1): # excludes last point
-        # get point with lower y (p1) and higher y (p2)
-        if side_contour[i][1] < side_contour[i + 1][1]:
-            p1 = side_contour[i] # point 1
-            p2 = side_contour[i + 1] # point 2
-        else:
-            p1 = side_contour[i + 1] # point 1
-            p2 = side_contour[i] # point 2
-
-        # check if y is between p1 and p2
-        if y >= p1[1] and y <= p2[1]:
-            # get x value at y using equation x = my + b
-            m = (p2[0] - p1[0]) / (p2[1] - p1[1])
-            b = p1[0] - m * p1[1]
-            x = m * y + b
-            return x
-    return None
+    line = lambda m, b: lambda x: m * x + b
+    lines = [line(-h/w, h), line(h/w, 0)]
+    for i, p in enumerate(c):
+        if p[1] <= lines[left](p[0]) and p[1] >= lines[not left](p[0]):
+            c = np.concatenate((c[i:], c[:i]))
+            break
+    above = c[:,1] > lines[left](c[:,0])
+    below = c[:,1] < lines[not left](c[:,0])
+    return c[np.logical_and(above, below)]
 
 def piece_displacements(pieces, solution):
     '''Finds relative positions and rotations needed to fit pieces together.
@@ -174,14 +101,28 @@ def piece_displacements(pieces, solution):
 
     return disp
 
-def piece_align_h(img_0, img_1):
+def smooth(x, length=12, discard=0.15):
+    window = np.ones(length) / length
+    x = np.convolve(x, window, 'valid')
+    discard = int(discard * len(x))
+    x = x[discard:-discard]
+    return x
+
+def get_critical(cont, max_diff=0.1):
+    y = smooth(cont[:, 1])
+    diff = np.abs(np.diff(y))
+    points = y[np.where(diff < max_diff)]
+    crit = np.sort(np.array([points[0], points[-1]]))
+    return crit
+
+def piece_align_h(left_img, right_img):
     '''Finds relative displacements of image 1 needed to fit two pieces horizontally.
 
     Parameters
     ----------
-    img_0 : np.ndarray
+    left_img : np.ndarray
         Image of the left piece, isolated.
-    img_1 : np.ndarray
+    right_img : np.ndarray
         Image of the right piece, isolated. If the pieces fit vertically,
         the images should be rotated before being used as fields for this
         function.
@@ -192,90 +133,35 @@ def piece_align_h(img_0, img_1):
         x displacement, y displacement of image 1 necessary for the puzzle
         pieces to align.
     '''
-    # get image dimensions
-    h0 = img_0.shape[0]
-    h1 = img_1.shape[0]
 
     # find contours
-    contour_0 = max(find_contours(img_0), key=cv2.contourArea)
-    contour_1 = max(find_contours(img_1), key=cv2.contourArea)
+    con0 = max(find_contours(left_img), key=cv2.contourArea)
+    con1 = max(find_contours(right_img), key=cv2.contourArea)
 
     # find side contours
-    side_contour_0 = get_side_contour(img_0, contour_0, 0)
-    side_contour_1 = get_side_contour(img_1, contour_1, 1)
+    scon0 = get_side_contour(left_img, con0, False)
+    scon1 = get_side_contour(right_img, con1, True)
 
     # Find y-displacement for image 1 that matches image 0 (y_dis_final).
-    # Start with side contours aligned on the top. Minimize standard
-    # deviation of the horizontal distances between the side contours.
-    # -------------------------------------------------------------------
 
-    # find y ranges of side contours
-    # for image 0
-    min_y = h0
-    max_y = 0
-    for point in side_contour_0:
-        if point[1] > max_y:
-            max_y = point[1]
-        if point[1] < min_y:
-            min_y = point[1]
-    y_range_0 = [min_y, max_y]
-    # for image 1
-    min_y = h1
-    max_y = 0
-    for point in side_contour_1:
-        if point[1] > max_y:
-            max_y = point[1]
-        if point[1] < min_y:
-            min_y = point[1]
-    y_range_1 = [min_y, max_y]
-
-    # determine whether image 1 moves up or down
-    move_up = False
-    if y_range_1[1] - y_range_1[0] > y_range_0[1] - y_range_0[0]:
-        # if side_contour_1 has more vertical range than side_contour_0
-        move_up = True
-
-    # iterate y-displacements
-    reached_end = False
-    y_dis_test = y_range_0[0] - y_range_1[0] # y displacement of image 1 being tested
-    min_std = 9999
-    y_dis_final = y_dis_test # IMPORTANT VARIABLE
-    while not reached_end:
-        # iterate over y values within y_range_0, with step 2 to find x displacements
-        x_displacements = []
-        for y in range(y_range_0[0], y_range_0[1], 2):
-            # if y is also within y_range_1
-            if y >= y_range_1[0] + y_dis_test and y <= y_range_1[1] + y_dis_test:
-                # get x values on side_contours
-                    x0 = find_x_on_side_contour(y, side_contour_0)
-                    x1 = find_x_on_side_contour(y - y_dis_test, side_contour_1)
-                    x_displacements.append(x1 - x0)
-
-        # find standard deviation of x displacements
-        std = np.std(x_displacements)
-        # replace min_std if lower
-        if std < min_std:
-            min_std = std
-            y_dis_final = y_dis_test
-
-        # check for end of loop: if bottoms of contours aligned
-        if y_range_0[1] == y_range_1[1] + y_dis_test:
-            reached_end = True
-
-        # increment
-        if move_up:
-            y_dis_test -= 1
-        else: # move_up == False
-            y_dis_test += 1
+    # wait, did I just invent convexity defects but worse? :facepalm:
+    crit0 = get_critical(scon0)
+    crit1 = get_critical(scon1)
+    width0 = crit0[1] - crit0[0]
+    width1 = crit1[1] - crit1[0]
+    offset = int((np.abs(width0 - width1) / 2).round())
+    if width0 < width1:
+        # the left piece is smaller than the right piece
+        y_dis_final = crit0[0] - offset - crit1[0]
+    else:
+        # the left piece is bigger than the right piece
+        y_dis_final = crit0[0] + offset - crit1[0]
 
     # Find x-displacement for image 1 that matches image 0 (x_dis_final).
-    # Start with side contours lined up, such that img_0 is on the left
-    # img_1 is on the right. Minimize mean of horizontal distances between
-    # side contours, with y_dis_final applied to img_1.
-    # --------------------------------------------------------------------
-    x0, y0 = side_contour_0.T
+    # TODO: I hate this? do something else here
+    x0, y0 = scon0.T
     f0 = interp1d(y0, x0)
-    x1, y1 = side_contour_1.T
+    x1, y1 = scon1.T
     y1 = y1 + y_dis_final
     f1 = interp1d(y1, x1)
     mid = (np.min(y0) + np.max(y0)) / 2

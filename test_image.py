@@ -65,8 +65,8 @@ def main():
     contours = find_contours(img_bw, min_area=18000)
 
     pieces = []
-    for box, piece, mask in get_pieces(img, contours, padding=20):
-        angle = orientation(mask, num_bins=26)
+    for box, piece, mask in get_pieces(img, contours, padding=0):
+        angle = orientation(mask)
         if angle > 45: angle -= 90
         piece = rotate_bound(piece, angle)
         mask = rotate_bound(mask, angle)
@@ -78,18 +78,13 @@ def main():
     # solutions = list(filter(lambda s: s[0, 0] == (9, 3), solutions))
     print(len(solutions))
     scores = [eval_solution(pieces, solution) for solution in solutions]
-    # for idx in np.argsort(scores):
-    #     print(idx)
-    #     print(solutions[idx])
-    #     # show_solution(idx, pieces, solutions[idx])
-    #     break
 
     solution = solutions[np.argsort(scores)[0]]
     # test piece alignment
     disp = piece_displacements(pieces, solution)
 
     h, w = solution.shape
-    canvas = np.zeros((h * 500, w * 500, 3), np.uint8)
+    canvas = np.zeros((h * 300, w * 300, 3), np.uint8)
     for r, c in grid_iter(h, w):
         temp = np.zeros_like(canvas)
         pi, pr = solution[r, c]

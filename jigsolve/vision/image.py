@@ -114,7 +114,7 @@ def binarize(img, threshold=70):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return cv2.threshold(img_gray, threshold, 255, cv2.THRESH_BINARY)[1]
 
-def find_contours(binarized, min_area=20000):
+def find_contours(binarized, min_area=0):
     '''Find contours in a binarized image.
 
     This function takes a binarized image and finds contours in it. Any
@@ -133,7 +133,7 @@ def find_contours(binarized, min_area=20000):
     contours : list
         A list of contours.
     '''
-    contours = cv2.findContours(image=binarized, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)[0]
+    contours = cv2.findContours(image=binarized, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)[0]
     return list(filter(lambda c: cv2.contourArea(c) > min_area, contours))
 
 def get_pieces(img, contours, padding=10):
@@ -169,7 +169,7 @@ def get_pieces(img, contours, padding=10):
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
         yield box, crop(isolated, box), crop(mask, box)
 
-def orientation(binarized, num_bins=10):
+def orientation(binarized, bin_width=0.3):
     '''Determine the orientation of a piece.
 
     This function takes a binarized image of a piece, and returns the angle
@@ -181,22 +181,41 @@ def orientation(binarized, num_bins=10):
     ----------
     binarized : np.ndarray
         A binarized image containing a single puzzle piece.
-    num_bins : int
-        Number of bins to use.
+    bin_width : float
+        Number of radians for each bin.
 
     Returns
     -------
     angle : float
         The angle the piece is rotated, counterclockwise in degrees.
     '''
-    edges = cv2.Canny(binarized, 10, 50)
+    edges = cv2.Canny(binarized, 50, 150)
     lines = cv2.HoughLines(edges, 1, np.pi/180, 30)
     thetas = lines[:,0,1]
-    # thetas.sort()
+    # print(len(thetas))
     # split = np.argmax(np.diff(thetas)) + 1
     # theta = np.mean(thetas[:split])
-    freq, bins = np.histogram(thetas, bins=num_bins, range=(0, np.pi))
-    most = np.argmax(freq)
-    big_bin = np.logical_and(thetas >= bins[most], thetas <= bins[most+1])
-    theta = np.mean(thetas[big_bin])
+
+    # freq, bins = np.histogram(thetas, bins=num_bins, range=(0, np.pi))
+    # most = np.argmax(freq)
+    # big_bin = np.logical_and(thetas >= bins[most], thetas <= bins[most+1])
+    # theta = np.mean(thetas[big_bin])
+
+    bins = []
+    max_bins = 4
+
+    def pick_bin(theta):
+        for i, b in enumerate(bins):
+            if np.abs(theta - np.average(b)) < bin_width: return i
+        if len(bins) < max_bins:
+            bins.append([])
+            return len(bins) - 1
+        return -1
+
+    for theta in thetas:
+        i = pick_bin(theta)
+        if i == -1: continue
+        bins[i].append(theta)
+
+    theta = np.average(max(bins, key=len))
     return (360 - theta * 180 / np.pi) % 90
