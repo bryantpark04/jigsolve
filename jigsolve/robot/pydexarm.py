@@ -13,9 +13,11 @@ class Dexarm:
         self.ser = serial.Serial(port, 115200, timeout=None)
         self.is_open = self.ser.isOpen()
         if self.is_open:
-            print('pydexarm: %s open' % self.ser.name)
+            # print('pydexarm: %s open' % self.ser.name)
+            pass
         else:
-            print('failed to open serial port')
+            # print('failed to open serial port')
+            pass
 
     def _send_cmd(self, data, wait=True):
         """
@@ -35,10 +37,10 @@ class Dexarm:
             serial_str = self.ser.readline().decode("utf-8")
             if len(serial_str) > 0:
                 if serial_str.find("ok") > -1:
-                    print("read ok")
+                    # print("read ok")
                     break
-                else:
-                    print("read：", serial_str)
+                # else:
+                    # print("read：", serial_str)
 
     def go_home(self):
         """
