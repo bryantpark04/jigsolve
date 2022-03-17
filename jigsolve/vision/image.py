@@ -169,7 +169,7 @@ def get_pieces(img, contours, padding=10):
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
         yield box, crop(isolated, box), crop(mask, box)
 
-def orientation(binarized, bin_width=0.3):
+def orientation(binarized, bin_width=0.2):
     '''Determine the orientation of a piece.
 
     This function takes a binarized image of a piece, and returns the angle
