@@ -97,6 +97,7 @@ def piece_displacements(pieces, solution):
 
             # set piece displacement to average displacements
             disp_avg = np.average((hdisp, vdisp), axis=0).round().astype(np.uint)
+            # disp_avg = np.array([vdisp[0], hdisp[1]])
             disp[r, c] = disp_avg
 
     return disp

@@ -22,6 +22,7 @@ def main():
     time.sleep(2)
     url = "http://192.168.69.1/media/image.jpg"
     data = requests.get(url).content
+    open('source.jpg', 'wb').write(data)
     arr = np.asarray(bytearray(data), dtype=np.uint8)
     img = cv2.imdecode(arr, -1)
     ###
@@ -38,16 +39,16 @@ def main():
     img = perspective_transform(img, rect)
 
     # mild cropping (not necessary in final product)
-    img = img[100:-120]
+    img = img[120:-140]
 
     cv2.imwrite('test.png', img)
 
     # find piece contours
-    img_bw = binarize(img, threshold=25)
-    # cv2.imshow('bin', img_bw)
+    img_bw = binarize(img, threshold=45)
+    cv2.imwrite('bin.png', img_bw)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    contours = find_contours(img_bw, min_area=12000)
+    contours = find_contours(img_bw, min_area=18000)
     print(len(contours))
 
     pieces = []
@@ -70,7 +71,7 @@ def main():
     disp = piece_displacements(pieces, solution)
 
     h, w = solution.shape
-    canvas = np.zeros((h * 300, w * 300, 3), np.uint8)
+    canvas = np.zeros((h * 500, w * 500, 3), np.uint8)
     for r, c in grid_iter(h, w):
         temp = np.zeros_like(canvas)
         pi, pr = solution[r, c]
@@ -80,6 +81,7 @@ def main():
         temp[yd:yd + ih, xd:xd + iw] = img
         canvas = cv2.add(canvas, temp)
 
+    cv2.imwrite('solution.png', canvas)
     small = resize(canvas, width=800)
     cv2.imshow('test', small)
     cv2.waitKey(0)
