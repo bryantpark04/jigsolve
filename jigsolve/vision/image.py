@@ -57,7 +57,7 @@ def rect_from_corners(corners):
 
     return rect
 
-def perspective_transform(img, rect, border=[0, 0, 0, 0]):
+def perspective_transform(img, rect, aspect=4/3):
     '''Perform a perspective transformation.
 
     This function takes an image and an array of four corner points, then
@@ -75,19 +75,24 @@ def perspective_transform(img, rect, border=[0, 0, 0, 0]):
         A BGR image.
     rect : np.ndarray
         An array of four corner points to map to a rectangle.
-    border : list
-        Border offsets.
     '''
     tl, tr, br, bl = rect
     # find maximum dimensions
-    w = max(int(dist(tl, tr)), int(dist(bl, br))) + border[1] + border[3]
-    h = max(int(dist(tl, bl)), int(dist(tr, br))) + border[0] + border[2]
+    w = max(dist(tl, tr), dist(bl, br))
+    h = max(dist(tl, bl), dist(tr, br))
+    if w / h < aspect:
+        h = w / aspect
+    else:
+        w = h * aspect
+    w = int(w)
+    h = int(h)
+    # h = int(0.75 * w) # may not work when there's a border
     # create a destination rectangle
     dst = np.array([
-        [border[3], border[0]],
-        [w - 1 - border[1], border[0]],
-        [w - 1 - border[1], h - 1 - border[2]],
-        [border[3], h - 1 - border[2]]
+        [0, 0],
+        [w - 1, 0],
+        [w - 1, h - 1],
+        [0, h - 1]
     ], dtype='float32')
     # transformation matrix
     M = cv2.getPerspectiveTransform(rect, dst)
