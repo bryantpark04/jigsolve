@@ -46,7 +46,7 @@ def show_solution(idx, pieces, solution):
 
 def main():
     wd = Path(__file__).resolve().parent
-    test_image = wd / 'img/misc_test/turck2.jpg'
+    test_image = wd / 'img/misc_test/source.jpg'
     img = cv2.imread(str(test_image.resolve()))
 
     cal = np.load(wd / 'calibration/calibration.npz')
