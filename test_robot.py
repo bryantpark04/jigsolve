@@ -1,8 +1,19 @@
 from jigsolve.robot.pydexarm import Dexarm
 import curses
+import cv2
+import numpy as np
+
+def find_transformation(src_pts, dst_pts):
+    # source: https://stackoverflow.com/questions/33141310/estimate-2d-transformation-between-two-sets-of-points-using-ransac
+    # # Find the transformation between points, standard RANSAC
+    # transformation_matrix, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+    # Compute a rigid transformation (without depth, only scale + rotation + translation) and RANSAC
+    transformation_rigid_matrix, rigid_mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
+    return transformation_rigid_matrix
 
 def main(stdscr):
-    dexarm = Dexarm(port="COM4")
+    dexarm = Dexarm(port="COM4")    
     dexarm._send_cmd('G91\r')
     dexarm.set_module_type(2)
 
@@ -15,7 +26,9 @@ def main(stdscr):
             c = c.lower()
         else:
             amount = 10
-        if c == 'q': 
+        if c == 'h':
+            dexarm.go_home()
+        elif c == 'q': 
             break
         elif c == 'w':
             dexarm.move_to(y=amount, mode='G0')
@@ -39,7 +52,7 @@ def main(stdscr):
             dexarm._send_cmd(f'M2101 R-5\r')
         elif c == 'KEY_RIGHT':
             dexarm._send_cmd(f'M2101 R5\r')
-    
+
     print(dexarm.get_current_position())
 
     dexarm.close()

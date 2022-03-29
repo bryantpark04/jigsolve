@@ -38,6 +38,8 @@ def main():
     rect = rect_from_corners(corners)
     img = perspective_transform(img, rect)
 
+    cv2.imwrite('perspective.png', img)
+
     # mild cropping (not necessary in final product)
     img = img[120:-140]
 

@@ -1,47 +1,55 @@
 import cv2
 from jigsolve.robot.pydexarm import Dexarm
+import requests
+import time
+from pathlib import Path
+import numpy as np
+from imutils import resize
 
-
-def click_event(event, x, y, flags, params):
-    pt = (x, y)
-    if event == cv2.EVENT_LBUTTONDOWN:
-        print(f"{pt=}")
-        # move robot arm to desired coordinates
+from jigsolve.vision.image import get_aruco, perspective_transform, rect_from_corners
 
 
 def main():
-    # todo: instantiate a dexarm at some point or pass it in
-    img = cv2.imread("img/out/transformed.png")
-    shape = img.shape[:2]
-    print(f"{shape=}")
-    while True:
-        cv2.imshow('img', img)
-        cv2.setMouseCallback('img', click_event)
-        k = cv2.waitKeyEx(0)
-        if k == 63232: # up
-            pass
-            # dexarm.move_to(z=5)
-        elif k == 63233: # down
-            pass
-            # dexarm.move_to(z=-5)
-        elif k == 63234: # left
-            pass
-            # dexarm._send_cmd(f'M2101 R-5\r')
-        elif k == 63235: # right
-            pass
-            # dexarm._send_cmd(f'M2101 R5\r')
-        elif k == ord('z'):
-            pass
-            # dexarm.air_picker_neutral()
-        elif k == ord('x'):
-            # dexarm.air_picker_pick()
-            pass
-        elif k == ord('c'):
-            # dexarm.air_picker_place()
-            pass
-        else:
-            break
+    requests.get("http://192.168.69.1/cmd_pipe.php", params={"cmd": "im"})
+    time.sleep(2)
+    url = "http://192.168.69.1/media/image.jpg"
+    data = requests.get(url).content
+    open('source.jpg', 'wb').write(data)
+    arr = np.asarray(bytearray(data), dtype=np.uint8)
+    img = cv2.imdecode(arr, -1)
+    ###
 
+    wd = Path(__file__).resolve().parent
+    cal = np.load(wd / 'calibration/calibration.npz')
+    img = cv2.undistort(img, cal['mtx'], cal['dist'], None, cal['newmtx'])
+
+    # perspective transform
+    corners = get_aruco(img)
+
+    print(len(corners))
+    rect = rect_from_corners(corners)
+    img = perspective_transform(img, rect)
+
+    img = resize(img, width=800)
+    cv2.imwrite('perspective.png', img)
+    # todo: instantiate a dexarm at some point or pass it in
+    dexarm = Dexarm(port="COM4")
+    dexarm._send_cmd('G90\r')
+    dexarm.move_to(x=-290, y=30, z=0, mode='G0')
+    h, w, _ = img.shape
+    src_pts = np.array([[0, 0], [w - 1, 0]])
+    dst_pts = np.array([[-365.0, 67.0], [249.0, 70.0]])
+    M = cv2.estimateAffinePartial2D(src_pts, dst_pts)[0]
+    def click_event(event, x, y, flags, params):
+        if event != cv2.EVENT_LBUTTONDOWN: return
+        v = np.array([x, h - 1 - y, 1])
+        rx, ry = M @ v
+        dexarm.move_to(x=rx, y=ry, z=-30)
+    cv2.imshow('img', img)
+    cv2.setMouseCallback('img', click_event)
+    cv2.waitKey(0)
+    cv2.destroyWindow('img')
+    dexarm.move_to(x=-290, y=30, z=0, mode='G0')
 
 if __name__ == "__main__":
     main()
