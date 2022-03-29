@@ -1,25 +1,46 @@
 import cv2
+from jigsolve.robot.pydexarm import Dexarm
 
 
-def click_event(event, c, r, flags, params):
+def click_event(event, x, y, flags, params):
+    pt = (x, y)
     if event == cv2.EVENT_LBUTTONDOWN:
-        x, y = c * width / img_dim[1], r * height / img_dim[0]
-        print(f"({c}, {r}) -> ({round(x, 4)}\", {round(y, 4)}\") -> ")
-
+        print(f"{pt=}")
         # move robot arm to desired coordinates
 
 
 def main():
-    global width, height, img_dim # r and y are measured from top of image
-    width, height = 24.0, 18.0 # inches
-
+    # todo: instantiate a dexarm at some point or pass it in
     img = cv2.imread("img/out/transformed.png")
-    img_dim = img.shape[:2]
-    print(f"{img.shape=}")
-    cv2.imshow('img', img)
-    cv2.setMouseCallback('img', click_event)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    shape = img.shape[:2]
+    print(f"{shape=}")
+    while True:
+        cv2.imshow('img', img)
+        cv2.setMouseCallback('img', click_event)
+        k = cv2.waitKeyEx(0)
+        if k == 63232: # up
+            pass
+            # dexarm.move_to(z=5)
+        elif k == 63233: # down
+            pass
+            # dexarm.move_to(z=-5)
+        elif k == 63234: # left
+            pass
+            # dexarm._send_cmd(f'M2101 R-5\r')
+        elif k == 63235: # right
+            pass
+            # dexarm._send_cmd(f'M2101 R5\r')
+        elif k == ord('z'):
+            pass
+            # dexarm.air_picker_neutral()
+        elif k == ord('x'):
+            # dexarm.air_picker_pick()
+            pass
+        elif k == ord('c'):
+            # dexarm.air_picker_place()
+            pass
+        else:
+            break
 
 
 if __name__ == "__main__":
