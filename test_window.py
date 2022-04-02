@@ -38,7 +38,7 @@ def main():
     dexarm.move_to(x=-290, y=30, z=0, mode='G0')
     h, w, _ = img.shape
     src_pts = np.array([[0, 0], [w - 1, 0]])
-    dst_pts = np.array([[-365.0, 67.0], [249.0, 70.0]])
+    dst_pts = np.array([[-314.0, 71.0], [303.0, 86.0]])
     M = cv2.estimateAffinePartial2D(src_pts, dst_pts)[0]
     def click_event(event, x, y, flags, params):
         if event != cv2.EVENT_LBUTTONDOWN: return

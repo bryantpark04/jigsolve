@@ -14,6 +14,7 @@ from jigsolve.utils import grid_iter, rotate_piece
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, \
     rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types
+from jigsolve.robot.puzzle_robot import piece_pick_point
 
 
 def main():
@@ -46,7 +47,7 @@ def main():
     cv2.imwrite('test.png', img)
 
     # find piece contours
-    img_bw = binarize(img, threshold=45)
+    img_bw = binarize(img, threshold=60)
     cv2.imwrite('bin.png', img_bw)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
@@ -62,6 +63,11 @@ def main():
         edges = edge_types(mask)
         hist = tuple(color_distribution(piece, mask))
         pieces.append(PuzzlePiece(piece, mask, hist, angle, box, edges))
+
+    # TEST method for finding optimal location for robot to pick up a piece
+    test_piece = pieces[2]
+    pick_point = piece_pick_point(test_piece.mask)
+    print(pick_point)
 
     solutions = solve_puzzle(pieces)
     # solutions = list(filter(lambda s: s[0, 0] == (9, 3), solutions))
