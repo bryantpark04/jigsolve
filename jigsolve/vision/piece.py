@@ -129,3 +129,26 @@ def color_distribution(img, mask):
         newmask = empty.copy()
         cv2.bitwise_and(m, mask, dst=newmask)
         yield cv2.calcHist([img], [0, 1, 2], newmask, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+
+def get_origin(mask):
+    '''Optimal point on a piece to pick it up
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        Binary image, with puzzle piece white.
+
+    Returns
+    -------
+    origin : np.ndarray
+        The optimal point of picking on the mask image.
+    '''
+    # source: https://stackoverflow.com/questions/53646022/opencv-c-find-inscribing-circle-of-a-contour
+
+    # Distance Transform
+    dt = cv2.distanceTransform(mask, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
+
+    # find max value
+    _, _, _, max_loc = cv2.minMaxLoc(dt)
+
+    return np.array(max_loc)

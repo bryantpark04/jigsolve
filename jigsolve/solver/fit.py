@@ -39,7 +39,7 @@ def get_side_contour(img, contour, left):
     below = c[:,1] < lines[not left](c[:,0])
     return c[np.logical_and(above, below)]
 
-def piece_displacements(pieces, solution):
+def piece_displacements(pieces, solution, origin):
     '''Finds relative positions and rotations needed to fit pieces together.
 
     Parameters
@@ -48,6 +48,8 @@ def piece_displacements(pieces, solution):
         List of puzzle pieces.
     solution : dict[tuple[int], tuple[int]]
         Maps grid positions to piece indices and rotations.
+    origin : tuple[int]
+        Top-left corner of first piece.
 
     Returns
     -------
@@ -71,7 +73,7 @@ def piece_displacements(pieces, solution):
 
     # set alignment of top left piece
     disp = np.zeros((h, w, 2), dtype=int)
-    disp[0, 0] = (100, 100)
+    disp[0, 0] = origin
 
     # set alignment of left-most column.
     # iterate rest of the rows in the solution grid.

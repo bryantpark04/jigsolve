@@ -119,7 +119,7 @@ def binarize(img, threshold=70):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return cv2.threshold(img_gray, threshold, 255, cv2.THRESH_BINARY)[1]
 
-def find_contours(binarized, min_area=0):
+def find_contours(binarized, min_area=0, max_area=100000):
     '''Find contours in a binarized image.
 
     This function takes a binarized image and finds contours in it. Any
@@ -132,6 +132,8 @@ def find_contours(binarized, min_area=0):
         A binarized image.
     min_area : int
         The minimum area for contours.
+    max_area : int
+        The maximum area for contours.
 
     Returns
     -------
@@ -139,7 +141,10 @@ def find_contours(binarized, min_area=0):
         A list of contours.
     '''
     contours = cv2.findContours(image=binarized, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)[0]
-    return list(filter(lambda c: cv2.contourArea(c) > min_area, contours))
+    def f(c):
+        a = cv2.contourArea(c)
+        return a > min_area and a < max_area
+    return list(filter(f, contours))
 
 def get_pieces(img, contours, padding=10):
     '''Split an image into segments with contours.
@@ -164,8 +169,6 @@ def get_pieces(img, contours, padding=10):
         Image of piece.
     mask : np.ndarray
         Mask for piece.
-    pos : tuple
-        Postion of the top-left corner of the bounding box in given image.
     '''
     for c in contours:
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
@@ -174,7 +177,7 @@ def get_pieces(img, contours, padding=10):
         box = (x - padding, y - padding, w + 2 * padding, h + 2 * padding)
         isolated = np.zeros_like(img)
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
-        yield box, crop(isolated, box), crop(mask, box), (x - padding, y - padding)
+        yield box, crop(isolated, box), crop(mask, box)
 
 def orientation(binarized, bin_width=0.2):
     '''Determine the orientation of a piece.
