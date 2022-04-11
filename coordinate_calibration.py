@@ -22,7 +22,6 @@ def main(stdscr):
     while len(corners) < 2:
         stdscr.addstr(0, 0, f'Move to the {names[len(corners)]} corner, then press SPACE.')
         c = stdscr.getkey()
-        stdscr.addstr(0, 0, c)
         if c in 'WASD':
             amount = 1
             c = c.lower()
