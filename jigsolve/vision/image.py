@@ -164,6 +164,8 @@ def get_pieces(img, contours, padding=10):
         Image of piece.
     mask : np.ndarray
         Mask for piece.
+    pos : tuple
+        Postion of the top-left corner of the bounding box in given image.
     '''
     for c in contours:
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
@@ -172,7 +174,7 @@ def get_pieces(img, contours, padding=10):
         box = (x - padding, y - padding, w + 2 * padding, h + 2 * padding)
         isolated = np.zeros_like(img)
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
-        yield box, crop(isolated, box), crop(mask, box)
+        yield box, crop(isolated, box), crop(mask, box), (x - padding, y - padding)
 
 def orientation(binarized, bin_width=0.2):
     '''Determine the orientation of a piece.
