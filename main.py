@@ -8,6 +8,7 @@ from imutils import rotate_bound, resize
 import requests
 import time
 from jigsolve.models import PuzzlePiece
+from jigsolve.robot.coords import get_transformer
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
 from jigsolve.utils import crop, grid_iter, rotate_piece, split_combined
@@ -31,7 +32,7 @@ def main():
     img = cv2.imread("source.jpg")
 
     wd = Path(__file__).resolve().parent
-    cal = np.load(wd / 'calibration/calibration.npz')
+    cal = np.load(wd / 'calibration/camera.npz')
     img = cv2.undistort(img, cal['mtx'], cal['dist'], None, cal['newmtx'])
 
     # perspective transform
@@ -99,6 +100,10 @@ def main():
             prot -= 360
 
         paths.append((pieces[pi].origin, dst_point, prot))
+
+    dst_pts = cal = np.load(wd / 'calibration/coords.npy')
+    transformer = get_transformer(img, dst_pts)
+    # transformer(img_x, img_y) -> (robot_x, robot_y)
 
     # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
