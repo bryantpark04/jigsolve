@@ -10,7 +10,7 @@ import time
 from jigsolve.models import PuzzlePiece
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
-from jigsolve.utils import grid_iter, rotate_piece, split_combined
+from jigsolve.utils import crop, grid_iter, rotate_piece, split_combined
 
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, \
     rect_from_corners
@@ -77,7 +77,9 @@ def main():
     solution_origin = (300, 1400)
     disp = piece_displacements(pieces, solution, solution_origin)
 
-    # add pieces to image
+    # add pieces to image and prepare tool paths
+    # a path is ((src_x, src_y), (dst_x, dst_y), cw_rot)
+    paths = []
     for r, c in grid_iter(*solution.shape):
         temp = np.zeros_like(img)
         pi, pr = solution[r, c]
@@ -87,13 +89,28 @@ def main():
         temp[yd:yd + ih, xd:xd + iw] = pimg
         img = cv2.add(img, temp)
 
-        src_point = pieces[pi].origin
         dst_point = cv2.minMaxLoc(porigin)[3]
         dst_point = (dst_point[0] + xd, dst_point[1] + yd)
 
-        cv2.line(img, src_point, dst_point, (0, 255, 0), 10, cv2.LINE_AA)
-        cv2.circle(img, src_point, 20, (0, 0, 255), cv2.FILLED)
-        cv2.circle(img, dst_point, 20, (255, 0, 0), cv2.FILLED)
+        # pieces[pi].rot is cw, pr is multiples of 90 ccw
+        prot = (pieces[pi].rot - 90 * pr) % 360
+        # rotate ccw if more than half-turn
+        if prot > 180:
+            prot -= 360
+
+        paths.append((pieces[pi].origin, dst_point, prot))
+
+    # execute paths
+    for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
+        # call robot?? just draw lines for now
+        # path line
+        cv2.line(img, (src_x, src_y), (dst_x, dst_y), (0, 0, 255), 1)
+        # src and dst point circles
+        cv2.circle(img, (src_x, src_y), 20, (255, 0, 0), 5)
+        cv2.circle(img, (dst_x, dst_y), 20, (255, 0, 0), 5)
+        # rotation lines
+        cv2.line(img, (src_x, src_y), (src_x - int(40 * np.sin(cw_rot * np.pi / 180)), src_y - int(40 * np.cos(cw_rot * np.pi / 180))), (255, 0, 255), 3)
+        cv2.line(img, (dst_x, dst_y), (dst_x, dst_y - 40), (255, 0, 255), 3)
 
     cv2.imwrite('solution.png', img)
 
