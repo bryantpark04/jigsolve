@@ -1,4 +1,5 @@
 from pathlib import Path
+from functools import partial
 
 import cv2
 import numpy as np
@@ -9,7 +10,7 @@ import time
 from jigsolve.models import PuzzlePiece
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
-from jigsolve.utils import grid_iter, rotate_piece
+from jigsolve.utils import grid_iter, rotate_piece, split_combined
 
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, \
     rect_from_corners
@@ -40,60 +41,56 @@ def main():
     rect = rect_from_corners(corners)
     img = perspective_transform(img, rect)
 
-    # cv2.imwrite('perspective.png', img)
-    # persp_img = img.copy() # this img used for internal coordinate system
-
-    # mild cropping
-    # img = img[120:-140]
-    # crop_margin = 120
-    # img = img[crop_margin:-crop_margin, crop_margin:-crop_margin]
-
-    # cv2.imwrite('test.png', img)
-
     # find piece contours
     img_bw = binarize(img, threshold=25)
-    # cv2.imwrite('bin.png', img_bw)
-
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
     contours = find_contours(img_bw, min_area=20000, max_area=50000)
     print(len(contours))
 
     pieces = []
-    for box, piece, mask in get_pieces(img, contours, padding=0):
+    for box, combined in get_pieces(img, contours, padding=0):
+        # find origin of piece
+        _, mask, _ = split_combined(combined)
         origin = get_origin(mask)
-        origin += box[:2]
-        origin = tuple(origin)
+        # store origin in separate layer
+        origin_mat = np.zeros_like(mask)
+        origin_mat[origin[1], origin[0]] = 255
+        origin = (origin[0] + box[0], origin[1] + box[1])
+        combined = np.dstack((combined, origin_mat))
+        # find piece rotation
         angle = orientation(mask, bin_width=0.25)
         if angle > 45: angle -= 90
-        piece = rotate_bound(piece, angle)
-        mask = rotate_bound(mask, angle)
+        combined = rotate_bound(combined, angle)
+        # identify edge types
+        _, mask, _ = split_combined(combined)
         edges = edge_types(mask)
-        hist = tuple(color_distribution(piece, mask))
-        pieces.append(PuzzlePiece(piece, mask, hist, origin, angle, box, edges))
+        # calculate edge color distributions
+        hist = tuple(color_distribution(combined))
+        # construct piece object
+        pieces.append(PuzzlePiece(combined, hist, origin, angle, box, edges))
 
+    # get approximate solution
     solutions = solve_puzzle(pieces)
     print(len(solutions))
-    scores = [eval_solution(pieces, solution) for solution in solutions]
+    solution = min(solutions, key=partial(eval_solution, pieces))
 
-    solution = solutions[np.argsort(scores)[0]]
+    # find piece displacements
     solution_origin = (300, 1400)
     disp = piece_displacements(pieces, solution, solution_origin)
 
-    # add pieces to canvas
-    h, w = solution.shape
-    # canvas = np.zeros_like(img, dtype=np.uint8)
-    for r, c in grid_iter(h, w):
+    # add pieces to image
+    for r, c in grid_iter(*solution.shape):
         temp = np.zeros_like(img)
         pi, pr = solution[r, c]
-        pImg = rotate_piece(pieces[pi].img, pr)
+        pimg, _, porigin = split_combined(rotate_piece(pieces[pi].combined, pr))
         xd, yd = disp[r, c]
-        ih, iw, _ = pImg.shape
-        temp[yd:yd + ih, xd:xd + iw] = pImg
+        ih, iw, _ = pimg.shape
+        temp[yd:yd + ih, xd:xd + iw] = pimg
         img = cv2.add(img, temp)
 
         src_point = pieces[pi].origin
-        dst_point = get_origin(rotate_piece(pieces[pi].mask, pr)) + disp[r, c]
+        dst_point = cv2.minMaxLoc(porigin)[3]
+        dst_point = (dst_point[0] + xd, dst_point[1] + yd)
+
         cv2.line(img, src_point, dst_point, (0, 255, 0), 10, cv2.LINE_AA)
         cv2.circle(img, src_point, 20, (0, 0, 255), cv2.FILLED)
         cv2.circle(img, dst_point, 20, (255, 0, 0), cv2.FILLED)

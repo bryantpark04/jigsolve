@@ -86,12 +86,18 @@ def adjacent(h, w, r, c):
         yield r+1, c+1
 
 def rotate_piece(img, rot):
-    # rotate piece image
+    trans = (1, 0,) + tuple(range(img.ndim))[2:]
     if rot == 0: # no rotation
         return img
     elif rot == 1: # 90 deg ccw
-        return cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        img = img.transpose(trans)
+        return cv2.flip(img, 0)
     elif rot == 2: # 180 deg
-        return cv2.rotate(img, cv2.ROTATE_180)
+        return cv2.flip(img, -1)
     elif rot == 3: # 270 deg ccw (or 90 deg cw)
-        return cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+        img = img.transpose(trans)
+        return cv2.flip(img, 1)
+
+def split_combined(combined):
+    img, mask, origin = np.dsplit(combined, [3, 4])
+    return img, np.squeeze(mask), np.squeeze(origin)

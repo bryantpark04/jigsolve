@@ -177,7 +177,8 @@ def get_pieces(img, contours, padding=10):
         box = (x - padding, y - padding, w + 2 * padding, h + 2 * padding)
         isolated = np.zeros_like(img)
         cv2.bitwise_and(img, img, dst=isolated, mask=mask)
-        yield box, crop(isolated, box), crop(mask, box)
+        isolated = np.dstack((isolated, mask))
+        yield box, crop(isolated, box)
 
 def orientation(binarized, bin_width=0.2):
     '''Determine the orientation of a piece.

@@ -4,10 +4,9 @@ from typing import Tuple
 
 @dataclass(eq=False, order=False, frozen=True)
 class PuzzlePiece:
-    img: np.ndarray = field(repr=False)
-    mask: np.ndarray = field(repr=False)
+    combined: np.ndarray = field(repr=False)
     hist: Tuple[np.ndarray] = field(repr=False)
     origin: Tuple[int]
-    img_rot: float
+    rot: float
     box: Tuple[int]
     edges: Tuple[int]

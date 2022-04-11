@@ -3,7 +3,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from jigsolve.vision.image import find_contours
-from jigsolve.utils import grid_iter, rotate_piece
+from jigsolve.utils import grid_iter, rotate_piece, split_combined
 
 def get_side_contour(img, contour, left):
     '''Find a subsection of a contour.
@@ -63,7 +63,8 @@ def piece_displacements(pieces, solution, origin):
     pieces_grid = np.empty((h, w), dtype=object)
     for r, c in grid_iter(h, w):
         pi, pr = solution[r, c]
-        piece_img = rotate_piece(pieces[pi].mask, pr)
+        _, mask, _ = split_combined(pieces[pi].combined)
+        piece_img = rotate_piece(mask, pr)
         pieces_grid[r, c] = piece_img
 
     # Starting at the top left corner of the solution grid, move down while

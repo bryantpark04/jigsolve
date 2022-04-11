@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from jigsolve.utils import dist
+from jigsolve.utils import dist, split_combined
 
 # edge types
 EDGE_INDENT = -1
@@ -94,7 +94,7 @@ def edge_types(piece, indent=30, indent_max=25, tab=2, tab_length=20, tab_width=
 
     return tuple(edges)
 
-def color_distribution(img, mask):
+def color_distribution(combined):
     '''Determine color distribution of a piece.
 
     This function takes an image of a piece and returns a histogram of the
@@ -102,16 +102,15 @@ def color_distribution(img, mask):
 
     Parameters
     ----------
-    img : np.ndarray
-        A BGR image containing a single puzzle piece.
-    mask : np.ndarray
-        The mask of a puzzle piece found by `get_pieces`.
+    combined : np.ndarray
+        An image containing a single puzzle piece.
 
     Yields
     ------
     hist : np.ndarray
         The histograms of the colors inside the piece for each edge.
     '''
+    img, mask, _ = split_combined(combined)
     h, w, _ = img.shape
     l = w // 3
     u = h // 3
@@ -151,4 +150,4 @@ def get_origin(mask):
     # find max value
     _, _, _, max_loc = cv2.minMaxLoc(dt)
 
-    return np.array(max_loc)
+    return max_loc
