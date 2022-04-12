@@ -6,6 +6,7 @@ import numpy as np
 from imutils import rotate_bound
 
 from jigsolve.models import PuzzlePiece
+from jigsolve.robot.arm import Arm
 from jigsolve.robot.coords import get_transformer
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
@@ -15,10 +16,16 @@ from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces
 from jigsolve.vision.piece import color_distribution, edge_types, get_origin
 
 def main():
-    # img = capture_image('http://192.168.69.1')
+    arm = Arm('COM4')
+    arm.use_absolute(True)
+    # arm.go_home()
+    arm.move_to(x=-300, y=0, z=0, mode='G0')
+    input('lmao')
+
+    img = capture_image('http://192.168.69.1')
 
     # Test using image source.jpg
-    img = cv2.imread("source.jpg")
+    # img = cv2.imread("source.jpg")
 
     wd = Path(__file__).resolve().parent
     cal = np.load(wd / 'calibration/camera.npz')
@@ -32,8 +39,9 @@ def main():
     img = perspective_transform(img, rect)
 
     # find piece contours
-    img_bw = binarize(img, threshold=25)
-    contours = find_contours(img_bw, min_area=20000, max_area=50000)
+    img_bw = binarize(img, threshold=30)
+    cv2.imwrite('bin.png', img_bw)
+    contours = find_contours(img_bw, min_area=20000, max_area=110000)
     print(len(contours))
 
     pieces = []
@@ -64,7 +72,7 @@ def main():
     solution = min(solutions, key=partial(eval_solution, pieces))
 
     # find piece displacements
-    solution_origin = (300, 1400)
+    solution_origin = (1600, 1000)
     disp = piece_displacements(pieces, solution, solution_origin)
 
     # add pieces to image and prepare tool paths
@@ -90,6 +98,8 @@ def main():
 
         paths.append((pieces[pi].origin, dst_point, prot))
 
+    cv2.imwrite('solution.png', img)
+
     dst_pts = cal = np.load(wd / 'calibration/coords.npy')
     transformer = get_transformer(img, dst_pts)
     # transformer(img_x, img_y) -> (robot_x, robot_y)
@@ -105,6 +115,26 @@ def main():
         # rotation lines
         cv2.line(img, (src_x, src_y), (src_x - int(40 * np.sin(cw_rot * np.pi / 180)), src_y - int(40 * np.cos(cw_rot * np.pi / 180))), (255, 0, 255), 3)
         cv2.line(img, (dst_x, dst_y), (dst_x, dst_y - 40), (255, 0, 255), 3)
+
+        arm.go_home()
+        rx, ry = transformer(src_x, src_y)
+        arm.move_to(x=rx, y=ry)
+        arm.move_to(z=-58)
+        input('lmao1')
+        src_angle = arm.get_current_position()[4]
+        arm.air_picker_pick()
+        arm.move_to(z=-25)
+        arm.go_home()
+        rx, ry = transformer(dst_x, dst_y)
+        arm.move_to(x=rx, y=ry)
+        input('lmao2')
+        dst_angle = arm.get_current_position()[4]
+        arm.rotate_relative(src_angle - dst_angle + cw_rot)
+        arm.move_to(z=-58)
+        input('lmao3')
+        arm.air_picker_place()
+        arm.move_to(z=-25)
+        arm.air_picker_neutral()
 
     cv2.imwrite('solution.png', img)
 

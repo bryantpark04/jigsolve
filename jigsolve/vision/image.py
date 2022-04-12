@@ -143,6 +143,7 @@ def find_contours(binarized, min_area=0, max_area=100000):
     contours = cv2.findContours(image=binarized, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)[0]
     def f(c):
         a = cv2.contourArea(c)
+        # print(a)
         return a > min_area and a < max_area
     return list(filter(f, contours))
 

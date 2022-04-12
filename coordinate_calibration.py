@@ -47,6 +47,8 @@ def main(stdscr):
             corners.append((x, y))
     arm.close()
 
+    if len(corners) != 2: 
+        return
     dst_pts = np.array(corners)
     p = Path(__file__) / '../calibration/coords.npy'
     np.save(p, dst_pts)
