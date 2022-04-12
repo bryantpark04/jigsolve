@@ -1,10 +1,9 @@
-from jigsolve.robot.arm import Arm
+import curses
+from pathlib import Path
 
-import cv2
 import numpy as np
 
-from pathlib import Path
-import curses
+from jigsolve.robot.arm import Arm
 
 def main(stdscr):
     arm = Arm(port="COM4")

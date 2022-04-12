@@ -1,5 +1,6 @@
+from functools import lru_cache
+
 import cv2
-import functools
 import numpy as np
 
 from jigsolve.utils import edge_rotate, grid_iter
@@ -123,7 +124,7 @@ def solve_puzzle(pieces):
 
 def eval_solution(pieces, solution):
     h, w = solution.shape
-    @functools.lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def hist_compare(pe1, pe2):
         p1, e1 = pe1
         p2, e2 = pe2

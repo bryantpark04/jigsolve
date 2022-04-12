@@ -1,32 +1,21 @@
-from pathlib import Path
 from functools import partial
+from pathlib import Path
 
 import cv2
 import numpy as np
-from imutils import rotate_bound, resize
+from imutils import rotate_bound
 
-import requests
-import time
 from jigsolve.models import PuzzlePiece
 from jigsolve.robot.coords import get_transformer
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
-from jigsolve.utils import crop, grid_iter, rotate_piece, split_combined
-
-from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, \
-    rect_from_corners
+from jigsolve.utils import grid_iter, rotate_piece, split_combined
+from jigsolve.vision.camera import capture_image
+from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types, get_origin
 
 def main():
-    ###
-    # requests.get("http://192.168.69.1/cmd_pipe.php", params={"cmd": "im"})
-    # time.sleep(2)
-    # url = "http://192.168.69.1/media/image.jpg"
-    # data = requests.get(url).content
-    # open('source.jpg', 'wb').write(data)
-    # arr = np.asarray(bytearray(data), dtype=np.uint8)
-    # img = cv2.imdecode(arr, -1)
-    ###
+    # img = capture_image('http://192.168.69.1')
 
     # Test using image source.jpg
     img = cv2.imread("source.jpg")

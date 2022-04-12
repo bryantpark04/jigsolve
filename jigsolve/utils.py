@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 def dist(p1, p2):
     '''Distance between two points

@@ -1,23 +1,15 @@
-import cv2
-from jigsolve.robot.pydexarm import Dexarm
-import requests
-import time
 from pathlib import Path
+
+import cv2
 import numpy as np
 from imutils import resize
 
+from jigsolve.robot.pydexarm import Dexarm
+from jigsolve.vision.camera import capture_image
 from jigsolve.vision.image import get_aruco, perspective_transform, rect_from_corners
 
-
 def main():
-    requests.get("http://192.168.69.1/cmd_pipe.php", params={"cmd": "im"})
-    time.sleep(2)
-    url = "http://192.168.69.1/media/image.jpg"
-    data = requests.get(url).content
-    open('source.jpg', 'wb').write(data)
-    arr = np.asarray(bytearray(data), dtype=np.uint8)
-    img = cv2.imdecode(arr, -1)
-    ###
+    img = capture_image('http://192.168.69.1')
 
     wd = Path(__file__).resolve().parent
     cal = np.load(wd / 'calibration/calibration.npz')

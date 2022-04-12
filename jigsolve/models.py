@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-import numpy as np
 from typing import Tuple
+
+import numpy as np
 
 @dataclass(eq=False, order=False, frozen=True)
 class PuzzlePiece:
