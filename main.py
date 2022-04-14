@@ -18,7 +18,7 @@ from jigsolve.vision.piece import color_distribution, edge_types, get_origin
 def main():
     arm = Arm('COM4')
     arm.use_absolute(True)
-    # arm.go_home()
+    arm.go_home()
     arm.move_to(x=-300, y=0, z=0, mode='G0')
     input('lmao')
 
@@ -33,8 +33,7 @@ def main():
 
     # perspective transform
     corners = get_aruco(img)
-
-    print(len(corners))
+    assert len(corners) == 4
     rect = rect_from_corners(corners)
     img = perspective_transform(img, rect)
 
@@ -42,7 +41,7 @@ def main():
     img_bw = binarize(img, threshold=30)
     cv2.imwrite('bin.png', img_bw)
     contours = find_contours(img_bw, min_area=20000, max_area=110000)
-    print(len(contours))
+    print(f"{len(contours) = }")
 
     pieces = []
     for box, combined in get_pieces(img, contours, padding=0):
@@ -68,11 +67,11 @@ def main():
 
     # get approximate solution
     solutions = solve_puzzle(pieces)
-    print(len(solutions))
+    print(f"{len(solutions) = }")
     solution = min(solutions, key=partial(eval_solution, pieces))
 
     # find piece displacements
-    solution_origin = (1600, 1000)
+    solution_origin = (1440, 900)
     disp = piece_displacements(pieces, solution, solution_origin)
 
     # add pieces to image and prepare tool paths
@@ -115,7 +114,8 @@ def main():
         # rotation lines
         cv2.line(img, (src_x, src_y), (src_x - int(40 * np.sin(cw_rot * np.pi / 180)), src_y - int(40 * np.cos(cw_rot * np.pi / 180))), (255, 0, 255), 3)
         cv2.line(img, (dst_x, dst_y), (dst_x, dst_y - 40), (255, 0, 255), 3)
-
+    cv2.imwrite('solution.png', img)
+    for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
         arm.go_home()
         rx, ry = transformer(src_x, src_y)
         arm.move_to(x=rx, y=ry)
@@ -132,10 +132,9 @@ def main():
         arm.rotate_relative(src_angle - dst_angle + cw_rot)
         arm.move_to(z=-58)
         input('lmao3')
+        arm.move_to(z=-55) # makes robot quieter when letting piece go, but also moves the piece slightly
         arm.air_picker_place()
         arm.move_to(z=-25)
         arm.air_picker_neutral()
-
-    cv2.imwrite('solution.png', img)
 
 if __name__ == '__main__': main()
