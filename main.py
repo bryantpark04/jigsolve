@@ -15,13 +15,11 @@ from jigsolve.vision.camera import capture_image
 from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces, orientation, perspective_transform, rect_from_corners
 from jigsolve.vision.piece import color_distribution, edge_types, get_origin
 
-def main():
-    arm = Arm('COM4')
+def main(arm):
     arm.use_absolute(True)
     arm.go_home()
     arm.move_to(x=-300, y=0, z=0, mode='G0')
-    input('lmao')
-
+    input('capture image')
     img = capture_image('http://192.168.69.1')
 
     # Test using image source.jpg
@@ -120,21 +118,29 @@ def main():
         rx, ry = transformer(src_x, src_y)
         arm.move_to(x=rx, y=ry)
         arm.move_to(z=-58)
-        input('lmao1')
+        input('pick up piece')
         src_angle = arm.get_current_position()[4]
         arm.air_picker_pick()
         arm.move_to(z=-25)
         arm.go_home()
         rx, ry = transformer(dst_x, dst_y)
         arm.move_to(x=rx, y=ry)
-        input('lmao2')
+        input('rotate piece')
         dst_angle = arm.get_current_position()[4]
         arm.rotate_relative(src_angle - dst_angle + cw_rot)
         arm.move_to(z=-58)
-        input('lmao3')
+        input('place piece')
         arm.move_to(z=-55) # makes robot quieter when letting piece go, but also moves the piece slightly
         arm.air_picker_place()
         arm.move_to(z=-25)
         arm.air_picker_neutral()
+    arm.go_home()
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    arm = Arm('COM4')
+    try:
+        main(arm)
+    except:
+        arm.use_absolute(True)
+        arm.air_picker_neutral()
+        arm.go_home()
