@@ -7,7 +7,7 @@ from imutils import rotate_bound
 
 from jigsolve.models import PuzzlePiece
 from jigsolve.robot.arm import Arm
-from jigsolve.robot.calibrate import get_calibrator
+from jigsolve.robot.calibrate import calibrate_arm
 from jigsolve.robot.coords import get_transformer
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
@@ -118,7 +118,7 @@ def main(arm):
     # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
         # re-calibrate robot for each path
-        dst_pts = get_calibrator(dst_pts)
+        dst_pts = calibrate_arm(dst_pts)
         transformer = get_transformer(img, dst_pts)
 
         arm.go_home()
