@@ -7,6 +7,7 @@ from imutils import rotate_bound
 
 from jigsolve.models import PuzzlePiece
 from jigsolve.robot.arm import Arm
+from jigsolve.robot.calibrate import get_calibrator
 from jigsolve.robot.coords import get_transformer
 from jigsolve.solver.approx import eval_solution, solve_puzzle
 from jigsolve.solver.fit import piece_displacements
@@ -97,11 +98,11 @@ def main(arm):
 
     cv2.imwrite('solution.png', img)
 
-    dst_pts = cal = np.load(wd / 'calibration/coords.npy')
+    dst_pts = cal = np.load(wd / 'calibration/coords.npy') # why are we storing this in cal?
     transformer = get_transformer(img, dst_pts)
     # transformer(img_x, img_y) -> (robot_x, robot_y)
 
-    # execute paths
+    # draw paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
         # call robot?? just draw lines for now
         # path line
@@ -113,7 +114,13 @@ def main(arm):
         cv2.line(img, (src_x, src_y), (src_x - int(40 * np.sin(cw_rot * np.pi / 180)), src_y - int(40 * np.cos(cw_rot * np.pi / 180))), (255, 0, 255), 3)
         cv2.line(img, (dst_x, dst_y), (dst_x, dst_y - 40), (255, 0, 255), 3)
     cv2.imwrite('solution.png', img)
+
+    # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
+        # re-calibrate robot for each path
+        dst_pts = get_calibrator(dst_pts)
+        transformer = get_transformer(img, dst_pts)
+
         arm.go_home()
         rx, ry = transformer(src_x, src_y)
         arm.move_to(x=rx, y=ry)
@@ -135,6 +142,7 @@ def main(arm):
         arm.move_to(z=-25)
         arm.air_picker_neutral()
     arm.go_home()
+    arm.close()
 
 if __name__ == '__main__':
     arm = Arm('COM4')
@@ -144,3 +152,4 @@ if __name__ == '__main__':
         arm.use_absolute(True)
         arm.air_picker_neutral()
         arm.go_home()
+        arm.close()
