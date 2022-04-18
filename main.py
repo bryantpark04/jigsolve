@@ -38,7 +38,7 @@ def main(arm):
 
     # find piece contours
     img_bw = binarize(img, threshold=30)
-    cv2.imwrite('bin.png', img_bw)
+    cv2.imwrite('img/out/bin.png', img_bw)
     contours = find_contours(img_bw, min_area=20000, max_area=110000)
     print(f"{len(contours) = }")
 
@@ -96,7 +96,7 @@ def main(arm):
 
         paths.append((pieces[pi].origin, dst_point, prot))
 
-    cv2.imwrite('solution.png', img)
+    cv2.imwrite('img/out/solution.png', img)
 
     dst_pts = cal = np.load(wd / 'calibration/coords.npy') # why are we storing this in cal?
     transformer = get_transformer(img, dst_pts)
@@ -113,7 +113,7 @@ def main(arm):
         # rotation lines
         cv2.line(img, (src_x, src_y), (src_x - int(40 * np.sin(cw_rot * np.pi / 180)), src_y - int(40 * np.cos(cw_rot * np.pi / 180))), (255, 0, 255), 3)
         cv2.line(img, (dst_x, dst_y), (dst_x, dst_y - 40), (255, 0, 255), 3)
-    cv2.imwrite('solution.png', img)
+    cv2.imwrite('img/out/solution.png', img)
 
     # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:

@@ -23,7 +23,7 @@ def main():
     img = perspective_transform(img, rect)
 
     img = resize(img, width=800)
-    cv2.imwrite('perspective.png', img)
+    cv2.imwrite('img/out/perspective.png', img)
     # todo: instantiate a dexarm at some point or pass it in
     dexarm = Dexarm(port="COM4")
     dexarm._send_cmd('G90\r')
