@@ -4,6 +4,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from imutils import rotate_bound
+from serial.serialutil import SerialException
 
 from jigsolve.models import PuzzlePiece
 from jigsolve.robot.arm import Arm
@@ -118,9 +119,9 @@ def main(arm):
     # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
         # re-calibrate robot for each path
-        dst_pts = calibrate_arm(dst_pts)
+        dst_pts = calibrate_arm(arm, dst_pts)
         transformer = get_transformer(img, dst_pts)
-
+        arm.use_absolute(True)
         arm.go_home()
         rx, ry = transformer(src_x, src_y)
         arm.move_to(x=rx, y=ry)
@@ -128,7 +129,7 @@ def main(arm):
         input('pick up piece')
         src_angle = arm.get_current_position()[4]
         arm.air_picker_pick()
-        arm.move_to(z=-25)
+        arm.move_to(z=-30)
         arm.go_home()
         rx, ry = transformer(dst_x, dst_y)
         arm.move_to(x=rx, y=ry)
@@ -137,9 +138,8 @@ def main(arm):
         arm.rotate_relative(src_angle - dst_angle + cw_rot)
         arm.move_to(z=-58)
         input('place piece')
-        arm.move_to(z=-55) # makes robot quieter when letting piece go, but also moves the piece slightly
         arm.air_picker_place()
-        arm.move_to(z=-25)
+        arm.move_to(z=-30)
         arm.air_picker_neutral()
     arm.go_home()
     arm.close()
@@ -148,7 +148,10 @@ if __name__ == '__main__':
     arm = Arm('COM4')
     try:
         main(arm)
-    except:
+    except SerialException as e:
+        print("Plug arm in or turn it on")
+        raise e
+    finally:
         arm.use_absolute(True)
         arm.air_picker_neutral()
         arm.go_home()
