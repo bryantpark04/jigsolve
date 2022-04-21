@@ -97,8 +97,9 @@ def main(arm):
 
     cv2.imwrite('solution.png', img)
 
-    dst_pts = cal = np.load(wd / 'calibration/coords.npy')
-    transformer = get_transformer(img, dst_pts)
+    dst_pts = cal = np.load(wd / 'calibration/dst_pts.npy')
+    src_pts_exc_corners = np.load(wd / 'calibration/src_pts_exc_corners.npy')
+    transformer = get_transformer(img, src_pts_exc_corners, dst_pts)
     # transformer(img_x, img_y) -> (robot_x, robot_y)
 
     # execute paths
