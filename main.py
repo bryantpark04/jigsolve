@@ -18,6 +18,7 @@ from jigsolve.vision.image import binarize, find_contours, get_aruco, get_pieces
 from jigsolve.vision.piece import color_distribution, edge_types, get_origin
 
 def main(arm):
+    # move arm out of way and capture image
     arm.use_absolute(True)
     arm.go_home()
     arm.move_to(x=-300, y=0, z=0, mode='G0')
@@ -118,9 +119,10 @@ def main(arm):
 
     # execute paths
     for (src_x, src_y), (dst_x, dst_y), cw_rot in paths:
-        # re-calibrate robot for each path
+        # re-calibrate robot for each path - comment out to disable
         dst_pts = calibrate_arm(arm, dst_pts)
         transformer = get_transformer(img, dst_pts)
+
         arm.use_absolute(True)
         arm.go_home()
         rx, ry = transformer(src_x, src_y)
